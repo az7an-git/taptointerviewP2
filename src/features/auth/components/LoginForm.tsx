@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/common/ui/input";
 import { Button } from "@/common/ui/button";
 import { Spinner } from "@/common/ui/Spinner";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +31,11 @@ export default function LoginForm() {
       if (success) {
         toast.success("Logged in successfully!");
         const profile = await authService.getProfile();
-        if (profile.user?.role === 'interviewer') {
+        const redirectParam = searchParams.get("redirect");
+
+        if (redirectParam && redirectParam.startsWith("/")) {
+          navigate(redirectParam);
+        } else if (profile.user?.role === 'interviewer') {
           navigate("/interviewer/dashboard");
         } else {
           navigate("/admin/dashboard");

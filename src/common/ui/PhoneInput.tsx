@@ -98,10 +98,45 @@ export function PhoneInput({
     onChange("");
   };
 
+  const MAX_NATIONAL_LENGTHS: Record<string, number> = {
+    US: 10, // USA
+    CA: 10, // Canada
+    PK: 10, // Pakistan
+    IN: 10, // India
+    GB: 10, // United Kingdom
+    AU: 9,  // Australia
+    NZ: 9,  // New Zealand
+    AE: 9,  // UAE
+    SA: 9,  // Saudi Arabia
+    DE: 11, // Germany
+    FR: 9,  // France
+    CN: 11, // China
+    BR: 11, // Brazil
+    MX: 10, // Mexico
+    ID: 12, // Indonesia
+    PH: 10, // Philippines
+    MY: 10, // Malaysia
+    SG: 8,  // Singapore
+    BD: 10, // Bangladesh
+    LK: 9,  // Sri Lanka
+    NP: 10, // Nepal
+    ZA: 9,  // South Africa
+    EG: 10, // Egypt
+    NG: 10, // Nigeria
+    GH: 9,  // Ghana
+    KE: 9,  // Kenya
+  };
+
   const handleNationalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const digits = parseIncompletePhoneNumber(event.target.value);
     if (!digits) {
       onChange("");
+      return;
+    }
+
+    // Limit digit input length based on country metadata to prevent typing extra numbers
+    const maxLen = (MAX_NATIONAL_LENGTHS[country] || 15) + (digits.startsWith("0") ? 1 : 0);
+    if (digits.length > maxLen) {
       return;
     }
 
