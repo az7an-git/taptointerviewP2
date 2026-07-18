@@ -9,6 +9,8 @@ export interface RegisterData {
   company_name: string;
   timezone: string;
   password: string;
+  mobile_phone?: string;
+  sms_consent?: boolean;
 }
 
 export interface LoginCredentials {
@@ -139,6 +141,56 @@ export const authService = {
   resetPassword: async (data: { email: string; otp: number; new_password: string }) => {
     const response = await authApi.post("/auth/reset-password", data);
     return response.data;
+  },
+
+  // Phone Verification Request
+  requestPhoneOtp: async (phone: string, smsConsent: boolean) => {
+    const response = await authApi.post("/auth/phone-verification/request", {
+      phone,
+      sms_consent: smsConsent,
+    });
+    return response.data;
+  },
+
+  // Verify Phone Code
+  verifyPhoneOtp: async (code: string) => {
+    const response = await authApi.post("/auth/phone-verification/verify", { code });
+    return response.data;
+  },
+
+  // Resend Phone Code
+  resendPhoneOtp: async () => {
+    const response = await authApi.post("/auth/phone-verification/resend");
+    return response.data;
+  },
+
+  // Delete Phone Number
+  deletePhone: async () => {
+    const response = await authApi.delete("/auth/phone");
+    return response.data;
+  },
+
+  // GET Notification Settings
+  getNotificationSettings: async () => {
+    const response = await authApi.get("/auth/notification-settings");
+    return response.data.data || response.data;
+  },
+
+  // PUT Notification Settings
+  updateNotificationSettings: async (settings: {
+    follow_me_enabled?: boolean;
+    sms_consent_active?: boolean;
+  }) => {
+    const response = await authApi.put("/auth/notification-settings", settings);
+    return response.data;
+  },
+
+  // GET Notification Attempts
+  getNotificationAttempts: async (page = 1, limit = 25) => {
+    const response = await authApi.get("/auth/notification-attempts", {
+      params: { page, limit },
+    });
+    return response.data.data || response.data;
   },
 };
 

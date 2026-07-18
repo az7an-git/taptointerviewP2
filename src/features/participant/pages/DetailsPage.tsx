@@ -36,6 +36,15 @@ export default function DetailsPage() {
     };
   }, [jobTitle, companyName]);
 
+  const hasPhoneInput = Boolean(details.phone && !/^\+\d{1,3}$/.test(details.phone.replace(/\s/g, "")));
+
+  // Reset SMS consent if phone is cleared
+  useEffect(() => {
+    if (!hasPhoneInput) {
+      setSmsConsent(false);
+    }
+  }, [details.phone, hasPhoneInput]);
+
   const jobId = localStorage.getItem("selectedJobId");
   const screeningToken = localStorage.getItem("screening_token");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,11 +249,11 @@ export default function DetailsPage() {
                   </span>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer group">
+                <label className={`flex items-start gap-3 group ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                   <div className="relative flex items-start pt-0.5">
                     <input
                       type="checkbox"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !hasPhoneInput}
                       checked={smsConsent}
                       onChange={(e) => setSmsConsent(e.target.checked)}
                       className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none focus:ring-2 focus:ring-[#FF512F]/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -255,7 +264,7 @@ export default function DetailsPage() {
                       </svg>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-400 leading-snug group-hover:text-gray-300 transition-colors">
+                  <span className={`text-xs text-gray-400 leading-snug transition-colors ${!hasPhoneInput ? "" : "group-hover:text-gray-300"}`}>
                     I agree to receive automated SMS notifications from Tap To Interview about my queue position, interview admission links, and hiring communications. Message and data rates may apply. Reply STOP at any time to opt out.
                   </span>
                 </label>

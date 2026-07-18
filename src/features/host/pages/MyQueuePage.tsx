@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { Clock } from "lucide-react";
 
 import { jobsApi } from "@/api/jobsApi";
@@ -17,6 +18,7 @@ const EXPIRE_RETRY_MAX = 8;
 let globalQueueCache: Job[] | null = null;
 
 export default function MyQueuePage() {
+    const { jobId } = useParams<{ jobId: string }>();
     const { setCompanyBalance, refreshUser } = useAuth();
     const [jobs, setJobs] = useState<Job[]>(globalQueueCache || []);
     const [isLoading, setIsLoading] = useState(!globalQueueCache);
@@ -112,7 +114,7 @@ export default function MyQueuePage() {
 
     const queueJobs = jobs.filter(
         (job) => job.status === "Active" && job.applicants && job.applicants.length > 0
-    );
+    ).filter((job) => jobId ? job.id === jobId : true);
 
     return (
         <div className="min-w-0 w-full max-w-full px-0 sm:px-0 space-y-4 sm:space-y-6 pb-16 sm:pb-20">

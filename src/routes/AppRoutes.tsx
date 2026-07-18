@@ -68,6 +68,10 @@ const router = createBrowserRouter([
             element: <MyQueuePage />,
           },
           {
+            path: "queue/:jobId",
+            element: <MyQueuePage />,
+          },
+          {
             path: "jobs/post",
             element: <PostJobPage />,
           },
@@ -116,6 +120,10 @@ const router = createBrowserRouter([
           },
           {
             path: "queue",
+            element: <MyQueuePage />,
+          },
+          {
+            path: "queue/:jobId",
             element: <MyQueuePage />,
           },
           {
