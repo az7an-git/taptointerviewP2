@@ -8,6 +8,7 @@ interface OtpInputProps {
   disabled?: boolean;
   id?: string;
   "aria-label"?: string;
+  inputClassName?: string;
 }
 
 export function OtpInput({
@@ -16,6 +17,7 @@ export function OtpInput({
   disabled = false,
   id = "otp",
   "aria-label": ariaLabel = "Verification code",
+  inputClassName,
 }: OtpInputProps) {
   const digits = React.useMemo(() => {
     const chars = value.replace(/\D/g, "").slice(0, OTP_LENGTH).split("");
@@ -106,7 +108,10 @@ export function OtpInput({
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
-          className="w-full min-w-0 h-10 sm:h-11 text-center text-base sm:text-lg font-bold text-white bg-white/5 border border-white/10 rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={
+            inputClassName ||
+            "w-full min-w-0 h-10 sm:h-11 text-center text-base sm:text-lg font-bold text-white bg-white/5 border border-white/10 rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          }
         />
       ))}
     </div>
