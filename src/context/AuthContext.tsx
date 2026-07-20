@@ -13,6 +13,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// SessionStorage flag so ProtectedRoute can skip ?redirect= during deliberate logout
+const LOGOUT_FLAG_KEY = "__is_logging_out";
+export const isLoggingOut = () => sessionStorage.getItem(LOGOUT_FLAG_KEY) === "1";
+export const clearLoggingOut = () => sessionStorage.removeItem(LOGOUT_FLAG_KEY);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await authService.logout();
     await new Promise((resolve) => setTimeout(resolve, 200));
+    sessionStorage.setItem(LOGOUT_FLAG_KEY, "1");
     setUser(null);
     toast.success("Logged out successfully!");
   };

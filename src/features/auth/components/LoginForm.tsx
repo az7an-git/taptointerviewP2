@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/common/ui/input";
 import { Button } from "@/common/ui/button";
@@ -6,11 +6,12 @@ import { Spinner } from "@/common/ui/Spinner";
 import { Eye, EyeOff } from "lucide-react";
 import { authService } from "@/services/authService";
 import { useAuth } from "@/context/AuthContext";
+import { isLoggingOut, clearLoggingOut } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +20,16 @@ export default function LoginForm() {
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // After a deliberate logout, strip the ?redirect= param that ProtectedRoute added
+  useEffect(() => {
+    if (isLoggingOut()) {
+      clearLoggingOut();
+      if (searchParams.has("redirect")) {
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
