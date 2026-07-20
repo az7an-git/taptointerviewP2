@@ -43,7 +43,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
         try {
             const data = await authService.getNotificationSettings();
             setPhone(data.mobile_phone || "");
-            setSmsConsent(Boolean(data.mobile_phone && data.sms_consent_active));
+            // Consent is never pre-filled — user must explicitly check it each session
             setFollowMe(data.follow_me_enabled || false);
             setSavedFollowMe(data.follow_me_enabled || false);
 
@@ -269,18 +269,17 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                         />
                                         <label
                                             htmlFor="settings-sms-consent"
-                                            className={`text-[11px] text-gray-500 leading-normal select-none ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                            className={`text-xs text-gray-500 leading-normal select-none ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                                                 }`}
                                         >
                                             I agree to receive SMS text message alerts when candidates join the waiting room.
                                         </label>
                                     </div>
-
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={handleSendOtp}
                                         disabled={isSendingOtp || !hasPhoneInput || !smsConsent}
-                                        className="w-full bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 text-xs shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        className="w-full justify-center gap-1.5 text-xs py-2 h-9 cursor-pointer font-bold bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white border-transparent shadow-sm"
                                     >
                                         {isSendingOtp ? (
                                             <>
@@ -290,7 +289,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                         ) : (
                                             <span>Verify Phone Number</span>
                                         )}
-                                    </button>
+                                    </Button>
                                 </>
                             ) : (
                                 <div className="space-y-4">
@@ -299,7 +298,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                                             <span className="break-all sm:break-normal flex-1 min-w-0">Code Sent to {phone}</span>
                                         </div>
-                                        <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                                        <p className="text-xs text-amber-700 leading-relaxed font-medium">
                                             Enter the 6-digit code. Valid for 10 minutes. 5 verification attempts permitted before lockout.
                                         </p>
                                     </div>
@@ -315,7 +314,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                             />
                                             <div className="h-4 mt-1">
                                                 {verificationError ? (
-                                                    <p className="text-[11px] text-red-500 font-bold">
+                                                    <p className="text-xs text-red-500 font-bold">
                                                         {verificationError}
                                                     </p>
                                                 ) : null}
@@ -344,10 +343,10 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                             )}
                                         </div>
 
-                                        <button
+                                        <Button
                                             type="submit"
                                             disabled={isSubmittingOtp || otpCode.length !== 6 || isLockedOut}
-                                            className="w-full bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 text-xs shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                            className="w-full justify-center gap-1.5 text-xs py-2 h-9 cursor-pointer font-bold bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white border-transparent shadow-sm"
                                         >
                                             {isSubmittingOtp ? (
                                                 <>
@@ -357,7 +356,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                             ) : (
                                                 <span>Verify Code</span>
                                             )}
-                                        </button>
+                                        </Button>
                                     </form>
                                 </div>
                             )}
@@ -366,7 +365,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                 </div>
 
                 {/* Right Card: Channels & Preferences */}
-                <div className="bg-gray-50/50 border border-gray-100 p-4 sm:p-5 rounded-xl space-y-5 flex flex-col justify-between">
+                <div className="bg-gray-50/50 border border-gray-100 p-4 sm:p-5 rounded-xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-4">
                         <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-start gap-1.5">
                             <Bell className="w-4 h-4 text-[#FF512F] mt-0.5 flex-shrink-0" />
@@ -375,49 +374,49 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
 
                         {/* Channels List */}
                         <div className="space-y-2">
-                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Active Channels</div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div className="flex items-center justify-between gap-2 p-2 bg-white border border-gray-150 rounded-lg">
+                            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Channels</div>
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between gap-2 p-2.5 bg-white border border-gray-200 rounded-lg">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <Mail className="w-4 h-4 text-[#FF512F] flex-shrink-0" />
-                                        <span className="text-xs font-bold text-gray-700 truncate">Email</span>
+                                        <span className="text-xs font-bold text-gray-700">Email</span>
                                     </div>
                                     {emailChannelActive ? (
-                                        <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">Active</span>
+                                        <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full flex-shrink-0">Active</span>
                                     ) : (
-                                        <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">Inactive</span>
+                                        <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full flex-shrink-0">Inactive</span>
                                     )}
                                 </div>
-                                <div className={`flex items-center justify-between gap-2 p-2 bg-white border border-gray-150 rounded-lg ${!isPhoneVerified ? 'opacity-60' : ''}`}>
+                                <div className={`flex items-center justify-between gap-2 p-2.5 bg-white border border-gray-200 rounded-lg ${!isPhoneVerified ? 'opacity-60' : ''}`}>
                                     <div className="flex items-center gap-2 min-w-0">
                                         <MessageSquare className="w-4 h-4 text-[#FF512F] flex-shrink-0" />
-                                        <span className="text-xs font-bold text-gray-700 truncate">SMS / Text</span>
+                                        <span className="text-xs font-bold text-gray-700">SMS / Text</span>
                                     </div>
                                     {!isPhoneVerified ? (
-                                        <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">Locked</span>
+                                        <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full flex-shrink-0">Locked</span>
                                     ) : smsChannelActive ? (
-                                        <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">Active</span>
+                                        <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full flex-shrink-0">Active</span>
                                     ) : (
-                                        <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">Inactive</span>
+                                        <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full flex-shrink-0">Inactive</span>
                                     )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Alert Preferences */}
-                        <div className="space-y-3 pt-2">
-                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Alert Preferences</div>
+                        <div className="space-y-2 pt-2">
+                            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Alert Preferences</div>
 
-                            <label className="flex items-center justify-between gap-4 p-2.5 bg-white border border-gray-150 rounded-lg cursor-pointer select-none">
+                            <label className="flex items-center justify-between gap-3 p-2.5 bg-white border border-gray-200 rounded-lg cursor-pointer select-none">
                                 <div className="flex-1 min-w-0">
                                     <span className="text-xs font-bold text-gray-800 block">Follow Me Alerts</span>
-                                    <p className="text-[10px] text-gray-500 font-medium leading-tight">Get join alerts when candidates enter the waiting room</p>
+                                    <p className="text-xs text-gray-500 font-medium leading-tight mt-0.5">Get join alerts when candidates enter the waiting room</p>
                                 </div>
                                 <input
                                     type="checkbox"
                                     checked={followMe}
                                     onChange={(e) => setFollowMe(e.target.checked)}
-                                    className="rounded border-gray-300 bg-white text-[#FF512F] focus:ring-[#FF512F] h-4 w-4 cursor-pointer flex-shrink-0"
+                                    className="rounded border-gray-300 bg-white text-[#FF512F] focus:ring-[#FF512F] h-4 w-4 cursor-pointer flex-shrink-0 self-center"
                                 />
                             </label>
                         </div>
