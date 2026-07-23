@@ -44,6 +44,10 @@ export default function AdmitPage() {
         navigate(`/company/${slug ?? ""}/status`);
       }
     },
+    session_started: () => {
+      const targetSlug = slug || localStorage.getItem("selectedCompanySlug") || "interview";
+      navigate(`/company/${targetSlug}/session`, { replace: true });
+    },
   });
 
   // Inspect on mount
@@ -200,7 +204,7 @@ export default function AdmitPage() {
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-2 text-left">
                   <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-red-400 font-medium">
-                    Your 90-second window has expired. You may have been moved back to the waiting room. 
+                    Your 90-second window has expired. You may have been moved back to the waiting room.
                   </p>
                 </div>
               )}

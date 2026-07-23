@@ -31,6 +31,7 @@ export interface UseDailySessionOptions {
 
 export interface UseDailySessionReturn {
   status: DailySessionStatus;
+  iframeStatus: "idle" | "loading" | "loaded";
   error: string | null;
   /** Trigger fetching the room URL and joining the call */
   joinSession: () => void;
@@ -49,6 +50,7 @@ export function useDailySession({
   onError,
 }: UseDailySessionOptions): UseDailySessionReturn {
   const [status, setStatus] = useState<DailySessionStatus>("idle");
+  const [iframeStatus, setIframeStatus] = useState<"idle" | "loading" | "loaded">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const callFrameRef = useRef<DailyCall | null>(null);
@@ -63,10 +65,10 @@ export function useDailySession({
       // ignore destroy errors
     }
     callFrameRef.current = null;
-    
+
     // Safety fallback: empty the container just in case Daily leaves something behind
     if (containerRef.current) {
-        containerRef.current.innerHTML = "";
+      containerRef.current.innerHTML = "";
     }
   }, [containerRef]);
 
@@ -83,6 +85,7 @@ export function useDailySession({
 
     setError(null);
     setStatus("fetching");
+    setIframeStatus("idle");
 
     let roomUrl = propRoomUrl;
     let dailyToken = propToken;
@@ -100,10 +103,10 @@ export function useDailySession({
       // Step 6 — GET /participant/session/video
       try {
         const videoSession = await participantApi.getSessionVideo(participantToken);
-        
+
         roomUrl = videoSession.url || (videoSession as any).room_url || (videoSession as any).roomUrl;
         dailyToken = videoSession.token || (videoSession as any).participant_token || (videoSession as any).daily_token || (videoSession as any).meeting_token;
-        
+
         if (!roomUrl) {
           throw new Error("Backend did not return a valid Daily.co room URL. Found: " + JSON.stringify(videoSession));
         }
@@ -136,10 +139,11 @@ export function useDailySession({
       // Safety: check if there's any global instance attached to this container
       const existingInstances = DailyIframe.supportedBrowser().supported ? DailyIframe.getCallInstance() : null;
       if (existingInstances) {
-          await existingInstances.destroy();
+        await existingInstances.destroy();
       }
 
       // Step 7 — callFrame.join({ url, token })
+      setIframeStatus("loading");
       const frame = DailyIframe.createFrame(containerRef.current as HTMLElement, {
         iframeStyle: {
           position: "absolute",
@@ -168,6 +172,9 @@ export function useDailySession({
       });
 
       callFrameRef.current = frame;
+
+      frame.on("loading", () => setIframeStatus("loading"));
+      frame.on("loaded", () => setIframeStatus("loaded"));
 
       frame.on("joined-meeting", () => {
         setStatus("joined");
@@ -228,5 +235,5 @@ export function useDailySession({
     };
   }, [destroyFrame]);
 
-  return { status, error, joinSession, leaveSession };
+  return { status, iframeStatus, error, joinSession, leaveSession };
 }

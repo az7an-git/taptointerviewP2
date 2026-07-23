@@ -141,7 +141,7 @@ export default function SessionEntryPage() {
     slug && slug !== ":" ? slug.charAt(0).toUpperCase() + slug.slice(1) : "Platform";
 
   // ── Daily session hook ───────────────────────────────────────────────────
-  const { status: dailyStatus, error: dailyError, joinSession, leaveSession } = useDailySession({
+  const { status: dailyStatus, iframeStatus, error: dailyError, joinSession, leaveSession } = useDailySession({
     containerRef: dailyContainerRef,
     onJoined: () => setPageState("live"),
     onLeft: () => {
@@ -154,7 +154,7 @@ export default function SessionEntryPage() {
     },
   });
 
-  const isFetching = dailyStatus === "fetching";
+  const isFetching = dailyStatus === "fetching" || (dailyStatus === "joining" && iframeStatus !== "loaded");
   const isInCall = dailyStatus === "joined";
 
   // ── Initial Check ────────────────────────────────────────────────────────
