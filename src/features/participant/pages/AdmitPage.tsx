@@ -66,6 +66,17 @@ export default function AdmitPage() {
           setSecondsLeft(result.remaining_seconds);
           localStorage.setItem("queue_entry_id", result.queue_entry_id);
           setQueueEntryId(result.queue_entry_id);
+
+          let extractedSlug = (result as any).company_slug || (result as any).company?.slug;
+          if (!extractedSlug) {
+            try {
+              const parsed = JSON.parse(atob(token.split('.')[1]));
+              extractedSlug = parsed.company_slug || parsed.slug;
+            } catch (e) { }
+          }
+          if (extractedSlug) {
+            localStorage.setItem("selectedCompanySlug", extractedSlug);
+          }
         }
       } catch {
         setError("Unable to verify your admission link. It may be invalid or expired.");
@@ -103,7 +114,19 @@ export default function AdmitPage() {
       localStorage.setItem("queue_entry_id", result.queue_entry_id);
       setQueueEntryId(result.queue_entry_id);
 
-      const targetSlug = slug || localStorage.getItem("selectedCompanySlug");
+      let extractedSlug = (result as any).company_slug || (result as any).company?.slug;
+      if (!extractedSlug) {
+        try {
+          const parsed = JSON.parse(atob(token.split('.')[1]));
+          extractedSlug = parsed.company_slug || parsed.slug;
+        } catch (e) { }
+      }
+
+      if (extractedSlug) {
+        localStorage.setItem("selectedCompanySlug", extractedSlug);
+      }
+
+      const targetSlug = slug || extractedSlug || localStorage.getItem("selectedCompanySlug");
       if (targetSlug) {
         navigate(`/company/${targetSlug}/session`, { replace: true });
         return;

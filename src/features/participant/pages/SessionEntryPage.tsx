@@ -410,12 +410,18 @@ export default function SessionEntryPage() {
               >
                 Rejoin Session
               </button>
-              <button
-                className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer text-sm"
-                onClick={() => navigate(`/company/${slug}`)}
-              >
-                Return to Jobs Page
-              </button>
+              {slug === "interview" ? (
+                <div className="w-full bg-white/5 border border-white/10 text-white/70 font-medium py-3 px-6 rounded-lg text-sm text-center">
+                  You may safely close this window.
+                </div>
+              ) : (
+                <button
+                  className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer text-sm"
+                  onClick={() => navigate(`/company/${slug}`)}
+                >
+                  Return to Jobs Page
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -458,12 +464,18 @@ export default function SessionEntryPage() {
               </p>
             </div>
             <div className="pt-2">
-              <button
-                className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer text-sm"
-                onClick={() => navigate(`/company/${slug}`)}
-              >
-                Return to Jobs Page
-              </button>
+              {slug === "interview" ? (
+                <div className="w-full bg-white/5 border border-white/10 text-white/70 font-medium py-3 px-6 rounded-lg text-sm text-center">
+                  You may safely close this window.
+                </div>
+              ) : (
+                <button
+                  className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer text-sm"
+                  onClick={() => navigate(`/company/${slug}`)}
+                >
+                  Return to Jobs Page
+                </button>
+              )}
             </div>
           </div>
         )}
