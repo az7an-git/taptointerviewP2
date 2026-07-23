@@ -191,7 +191,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
             await authService.updateNotificationSettings({
                 follow_me_enabled: followMe,
             });
-            toast.success("Notification preferences updated!");
+            toast.success("Notification preferences saved successfully.");
             await fetchSettings();
             await refreshUser();
         } catch (err: any) {
@@ -269,10 +269,11 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                         />
                                         <label
                                             htmlFor="settings-sms-consent"
-                                            className={`text-xs text-gray-500 leading-normal select-none ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                            className={`text-xs text-gray-500 leading-relaxed select-none ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                                                 }`}
                                         >
                                             I agree to receive SMS text message alerts when candidates join the waiting room.
+                                            <div className="block mt-0.5 text-[10px] text-gray-400">Message and data rates may apply. Reply STOP to opt out.</div>
                                         </label>
                                     </div>
                                     <Button
@@ -294,9 +295,22 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                             ) : (
                                 <div className="space-y-4">
                                     <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg space-y-1">
-                                        <div className="flex items-start gap-1.5 text-amber-800 text-xs font-bold">
-                                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                            <span className="break-all sm:break-normal flex-1 min-w-0">Code Sent to {phone}</span>
+                                        <div className="flex items-start justify-between gap-1.5">
+                                            <div className="flex items-start gap-1.5 text-amber-800 text-xs font-bold">
+                                                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                                <span className="break-all sm:break-normal flex-1 min-w-0">Code Sent to {phone}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsVerifying(false);
+                                                    setOtpCode("");
+                                                    setIsLockedOut(false);
+                                                }}
+                                                className="text-[10px] text-amber-600 hover:text-amber-800 underline font-bold flex-shrink-0 cursor-pointer"
+                                            >
+                                                Change
+                                            </button>
                                         </div>
                                         <p className="text-xs text-amber-700 leading-relaxed font-medium">
                                             Enter the 6-digit code. Valid for 10 minutes. 5 verification attempts permitted before lockout.
