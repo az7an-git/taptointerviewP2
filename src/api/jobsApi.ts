@@ -16,6 +16,8 @@ import {
   JobApplicant,
   SaveOutcomePayload,
   ScreeningAnswer,
+  WindowRequest,
+  WindowRequestType,
 } from "@/types/job";
 
 const mapScreeningOptionFromBackend = (opt: any): ScreeningQuestionOption => ({
@@ -47,6 +49,8 @@ const mapScreeningQuestionToBackend = (q: ScreeningQuestion) => ({
 });
 
 const capitalizeStatus = (status: string): QueueWindow["status"] => {
+  const lower = status.toLowerCase();
+  if (lower === "wrapping_up") return "wrapping_up";
   const normalized = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   if (normalized === "Scheduled" || normalized === "Open" || normalized === "Closed" || normalized === "Paused") {
     return normalized;
@@ -59,6 +63,8 @@ const mapQueueWindowFromBackend = (w: any): QueueWindow => ({
   startTime: normalizeWindowIsoFromApi(w.starts_at),
   endTime: normalizeWindowIsoFromApi(w.ends_at),
   status: w.status ? capitalizeStatus(w.status) : "Scheduled",
+  pendingCloseDecision: Boolean(w.pending_close_decision),
+  closingWarningSentAt: w.closing_warning_sent_at ?? null,
 });
 
 const OUTCOME_VALUES = new Set(["hired", "follow_up", "not_a_fit"]);
@@ -183,6 +189,8 @@ const mapToFrontend = (backend: any): Job => {
     queueCount: backend.queue_count !== undefined ? Number(backend.queue_count) : (backend.queueCount || 0),
     totalCount: backend.total_count !== undefined ? Number(backend.total_count) : (backend.totalCount || 0),
     applicants: (backend.applicants || []).map(mapApplicantFromBackend),
+    queueStatus: backend.queue_status ?? backend.queuePauseStatus,
+    pendingCloseDecision: Boolean(backend.pending_close_decision),
   };
 };
 
@@ -605,5 +613,138 @@ export const jobsApi = {
       };
     }>("/dashboard/stats");
     return response.data;
+  },
+
+  /** Extend an active or wrapping_up window by 15, 30, 60, or 120 minutes (Admin) */
+  extendWindow: async (jobId: string, windowId: string, minutes: 15 | 30 | 60 | 120 | number) => {
+    const response = await authApi.post<{
+      status: string;
+      data: {
+        job: any;
+        extended_by_minutes: number;
+        ends_at: string;
+      };
+    }>(`/jobs/${jobId}/windows/${windowId}/extend`, { minutes });
+    return {
+      status: response.data.status,
+      data: {
+        ...response.data.data,
+        job: response.data.data?.job ? mapToFrontend(response.data.data.job) : null,
+      },
+    };
+  },
+
+  /** Manually close an active window early into wrapping_up (Admin) */
+  closeWindowEarly: async (jobId: string, windowId: string) => {
+    const response = await authApi.post<{
+      status: string;
+      data: {
+        job: any;
+        waiting_count: number;
+        active_interviews: number;
+        pending_close_decision: boolean;
+        message: string;
+      };
+    }>(`/jobs/${jobId}/windows/${windowId}/close-early`);
+    return {
+      status: response.data.status,
+      data: {
+        ...response.data.data,
+        job: response.data.data?.job ? mapToFrontend(response.data.data.job) : null,
+      },
+    };
+  },
+
+  /** Submit decision to continue interviewing or release remaining candidates (Admin) */
+  closeWindowDecision: async (jobId: string, windowId: string, decision: "continue" | "release") => {
+    const response = await authApi.post<{
+      status: string;
+      data: {
+        job: any;
+        decision: string;
+        notifications_sent?: number;
+        message: string;
+      };
+    }>(`/jobs/${jobId}/windows/${windowId}/close-decision`, { decision });
+    return {
+      status: response.data.status,
+      data: {
+        ...response.data.data,
+        job: response.data.data?.job ? mapToFrontend(response.data.data.job) : null,
+      },
+    };
+  },
+
+  /** Edit start or end time of a single window with overlap validation (Admin) */
+  updateSingleWindow: async (
+    jobId: string,
+    windowId: string,
+    payload: { starts_at?: string; ends_at?: string }
+  ) => {
+    const response = await authApi.put<{
+      status: string;
+      data: {
+        job: any;
+        window_id: string;
+      };
+    }>(`/jobs/${jobId}/windows/${windowId}`, payload);
+    return {
+      status: response.data.status,
+      data: {
+        ...response.data.data,
+        job: response.data.data?.job ? mapToFrontend(response.data.data.job) : null,
+      },
+    };
+  },
+
+  /** Submit an extension or early close request (Admin or Interviewer/Recruiter) */
+  createWindowRequest: async (
+    jobId: string,
+    payload: {
+      window_id: string;
+      request_type: WindowRequestType;
+      extend_minutes?: number;
+      note?: string;
+    }
+  ) => {
+    const response = await authApi.post<{
+      status: string;
+      data: WindowRequest;
+    }>(`/jobs/${jobId}/window-requests`, payload);
+    return response.data;
+  },
+
+  /** List window requests for a job (Optional filter by status, e.g. pending) */
+  listWindowRequests: async (jobId: string, status?: string) => {
+    const response = await authApi.get<{
+      status: string;
+      data: WindowRequest[];
+    }>(`/jobs/${jobId}/window-requests`, {
+      params: status ? { status } : undefined,
+    });
+    return response.data;
+  },
+
+  /** Review (approve/decline) a recruiter request (Admin) */
+  reviewWindowRequest: async (
+    jobId: string,
+    requestId: string,
+    payload: { action: "approve" | "decline"; extend_minutes?: number }
+  ) => {
+    const response = await authApi.post<{
+      status: string;
+      data: {
+        request: WindowRequest;
+        job: any | null;
+        action_result: any;
+      };
+    }>(`/jobs/${jobId}/window-requests/${requestId}/review`, payload);
+    return {
+      status: response.data.status,
+      data: {
+        ...response.data.data,
+        job: response.data.data?.job ? mapToFrontend(response.data.data.job) : null,
+      },
+    };
   },
 };
