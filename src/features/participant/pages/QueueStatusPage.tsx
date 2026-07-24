@@ -419,6 +419,21 @@ export default function QueueStatusPage() {
                   </div>
                 )}
 
+                {/* Wrapping Up State Alert */}
+                {!loading && (queueData?.queue_pause_status === "wrapping_up" || queueData?.status === "wrapping_up") && (
+                  <div className="max-w-xl mx-auto bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-start gap-3 text-left">
+                    <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-amber-500">
+                        Interview Window Wrapping Up
+                      </p>
+                      <p className="text-xs font-medium text-amber-500/80 mt-1">
+                        This interview window is wrapping up. Candidates currently in line remain protected and will continue to be called.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Stats Row */}
                 {!loading && queueData && (
                   <>

@@ -13,6 +13,10 @@ const JOB_QUEUE_EVENTS = [
   "session_ended",
   "outcome_saved",
   "queue_windows_updated",
+  "window_closing_warning",
+  "window_close_prompt",
+  "window_request_created",
+  "window_request_reviewed",
 ] as const;
 
 const JOB_CREDIT_EVENTS = [
@@ -22,13 +26,33 @@ const JOB_CREDIT_EVENTS = [
   "credit_returned",
 ] as const;
 
-export function useJobRealtime(jobId: string | undefined, onUpdate: () => void) {
+export interface JobRealtimeCallbacks {
+  onWindowClosingWarning?: (payload: any) => void;
+  onWindowClosePrompt?: (payload: any) => void;
+  onWindowRequestCreated?: (payload: any) => void;
+  onWindowRequestReviewed?: (payload: any) => void;
+}
+
+export function useJobRealtime(
+  jobId: string | undefined,
+  onUpdate: () => void,
+  callbacks?: JobRealtimeCallbacks
+) {
   const { setCompanyBalance } = useAuth();
 
   const handlers = useMemo(() => {
     const queueHandlers = Object.fromEntries(
-      JOB_QUEUE_EVENTS.map((event) => [event, onUpdate])
-    ) as Record<string, () => void>;
+      JOB_QUEUE_EVENTS.map((event) => [
+        event,
+        (payload: unknown) => {
+          if (event === "window_closing_warning") callbacks?.onWindowClosingWarning?.(payload);
+          if (event === "window_close_prompt") callbacks?.onWindowClosePrompt?.(payload);
+          if (event === "window_request_created") callbacks?.onWindowRequestCreated?.(payload);
+          if (event === "window_request_reviewed") callbacks?.onWindowRequestReviewed?.(payload);
+          onUpdate();
+        },
+      ])
+    ) as Record<string, (payload: unknown) => void>;
 
     const creditHandlers = createCreditRealtimeHandlers(setCompanyBalance, { showToasts: false });
     const wrappedCreditHandlers = Object.fromEntries(
@@ -42,7 +66,7 @@ export function useJobRealtime(jobId: string | undefined, onUpdate: () => void) 
     );
 
     return { ...queueHandlers, ...wrappedCreditHandlers };
-  }, [onUpdate, setCompanyBalance]);
+  }, [onUpdate, callbacks, setCompanyBalance]);
 
   useRealtimeChannel(jobId ? `job:${jobId}` : null, handlers, {
     onSubscribed: onUpdate,

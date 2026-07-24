@@ -15,7 +15,7 @@ export interface ScreeningQuestion {
   options: ScreeningQuestionOption[];
 }
 
-export type QueueWindowStatus = "Scheduled" | "Open" | "Closed" | "Paused";
+export type QueueWindowStatus = "Scheduled" | "Open" | "Closed" | "Paused" | "Wrapping_up" | "wrapping_up";
 
 /** Body for PUT /jobs/:jobId/windows/status */
 export type QueueWindowLiveStatusPayload = "open" | "paused";
@@ -25,6 +25,8 @@ export interface QueueWindow {
   startTime: string; // UTC ISO (Z), maps to starts_at
   endTime: string; // UTC ISO (Z), maps to ends_at
   status?: QueueWindowStatus;
+  pendingCloseDecision?: boolean;
+  closingWarningSentAt?: string | null;
 }
 
 export interface JobReview {
@@ -123,4 +125,68 @@ export interface Job {
   applicants?: JobApplicant[];
   /** From active_queues API when window list is not included */
   queuePauseStatus?: string;
+  queueStatus?: "open" | "wrapping_up" | "paused" | "scheduled" | "closed" | string;
+  pendingCloseDecision?: boolean;
+}
+
+export type WindowRequestType = "extend" | "early_close";
+export type WindowRequestStatus = "pending" | "approved" | "declined";
+
+export interface WindowRequestUser {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+export interface WindowRequest {
+  id: string;
+  job_id: string;
+  window_id: string;
+  request_type: WindowRequestType;
+  extend_minutes?: number | null;
+  note?: string | null;
+  status: WindowRequestStatus;
+  requested_by?: string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  updated_at?: string;
+  requester?: WindowRequestUser;
+  reviewer?: WindowRequestUser;
+}
+
+export interface WindowClosingWarningPayload {
+  job_id: string;
+  window_id: string;
+  ends_at: string;
+  waiting_count: number;
+  minutes_remaining: number;
+  message: string;
+  at: string;
+}
+
+export interface WindowClosePromptPayload {
+  job_id: string;
+  window_id: string;
+  waiting_count: number;
+  active_interviews: number;
+  pending_close_decision: boolean;
+  has_future_window: boolean;
+  options: ("continue" | "release")[];
+  message: string;
+  at: string;
+}
+
+export interface WindowRequestCreatedPayload {
+  request: WindowRequest;
+  job_id: string;
+  at: string;
+}
+
+export interface WindowRequestReviewedPayload {
+  request: WindowRequest;
+  action: "approve" | "declined" | "decline";
+  job_id: string;
+  at: string;
 }
