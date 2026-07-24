@@ -217,12 +217,15 @@ export default function JobDetailPage() {
         >
           <QueueWindowScheduler
             jobId={id!}
+            job={job}
             initialWindows={job.queueWindows || []}
             persistToApi
             allowLiveControls={isActiveJobStatus(job.status)}
             onWindowsChange={(windows: QueueWindow[]) => setJob(prev => prev ? { ...prev, queueWindows: windows } : null)}
             disabled={job.status === "Closed"}
             showAddButton={user?.role !== 'interviewer'}
+            isAdmin={user?.role !== 'interviewer'}
+            onJobUpdated={(updatedJob) => setJob(updatedJob)}
           />
         </div>
       </div>

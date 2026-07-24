@@ -100,11 +100,10 @@ function CalendarSelect({
         aria-label={ariaLabel}
         aria-expanded={isOpen}
         onClick={() => onOpenChange(!isOpen)}
-        className={`w-full flex items-center justify-between gap-1 text-xs font-bold text-gray-800 bg-gray-50 border rounded-lg px-2.5 py-2.5 touch-manipulation transition-all ${
-          isOpen
-            ? "border-[#FF512F] ring-2 ring-[#FF512F]/10 bg-white"
-            : "border-gray-200 hover:border-gray-300"
-        }`}
+        className={`w-full flex items-center justify-between gap-1 text-xs font-bold text-gray-800 bg-gray-50 border rounded-lg px-2.5 py-2.5 touch-manipulation transition-all ${isOpen
+          ? "border-[#FF512F] ring-2 ring-[#FF512F]/10 bg-white"
+          : "border-gray-200 hover:border-gray-300"
+          }`}
       >
         <span className="truncate">{selectedLabel}</span>
         <ChevronDown
@@ -132,11 +131,10 @@ function CalendarSelect({
                     onChange(opt.value);
                     onOpenChange(false);
                   }}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold touch-manipulation transition-colors ${
-                    active
-                      ? "bg-gradient-to-br from-[#FF512F] to-[#FF7A00] text-white"
-                      : "text-gray-700 hover:bg-gray-50 active:bg-gray-100"
-                  }`}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold touch-manipulation transition-colors ${active
+                    ? "bg-gradient-to-br from-[#FF512F] to-[#FF7A00] text-white"
+                    : "text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -270,11 +268,10 @@ function CalendarPanel({
               type="button"
               disabled={disabled}
               onClick={() => onSelectDay(d, "prev")}
-              className={`${dayCellClass} font-medium flex items-center justify-center transition-all touch-manipulation ${
-                disabled
-                  ? "text-gray-200 cursor-not-allowed"
-                  : "text-gray-300 hover:bg-gray-50 cursor-pointer"
-              }`}
+              className={`${dayCellClass} font-medium flex items-center justify-center transition-all touch-manipulation ${disabled
+                ? "text-gray-200 cursor-not-allowed"
+                : "text-gray-300 hover:bg-gray-50 cursor-pointer"
+                }`}
             >
               {d}
             </button>
@@ -290,13 +287,12 @@ function CalendarPanel({
               type="button"
               disabled={disabled}
               onClick={() => onSelectDay(d, "current")}
-              className={`${dayCellClass} flex items-center justify-center transition-all touch-manipulation ${
-                disabled
-                  ? "text-gray-300 cursor-not-allowed"
-                  : active
-                    ? "bg-gradient-to-br from-[#FF512F] to-[#FF7A00] text-white shadow-md shadow-[#FF512F]/20 cursor-pointer"
-                    : "text-gray-700 hover:bg-gray-50 active:bg-gray-100 cursor-pointer"
-              }`}
+              className={`${dayCellClass} flex items-center justify-center transition-all touch-manipulation ${disabled
+                ? "text-gray-300 cursor-not-allowed"
+                : active
+                  ? "bg-gradient-to-br from-[#FF512F] to-[#FF7A00] text-white shadow-md shadow-[#FF512F]/20 cursor-pointer"
+                  : "text-gray-700 hover:bg-gray-50 active:bg-gray-100 cursor-pointer"
+                }`}
             >
               {d}
             </button>
@@ -311,11 +307,10 @@ function CalendarPanel({
               type="button"
               disabled={disabled}
               onClick={() => onSelectDay(d, "next")}
-              className={`${dayCellClass} font-medium flex items-center justify-center transition-all touch-manipulation ${
-                disabled
-                  ? "text-gray-200 cursor-not-allowed"
-                  : "text-gray-300 hover:bg-gray-50 cursor-pointer"
-              }`}
+              className={`${dayCellClass} font-medium flex items-center justify-center transition-all touch-manipulation ${disabled
+                ? "text-gray-200 cursor-not-allowed"
+                : "text-gray-300 hover:bg-gray-50 cursor-pointer"
+                }`}
             >
               {d}
             </button>

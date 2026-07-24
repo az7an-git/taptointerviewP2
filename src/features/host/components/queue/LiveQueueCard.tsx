@@ -63,15 +63,32 @@ export default function LiveQueueCard({
     );
   }
 
-  if (job.status === "Active" && liveQueueState === "open") {
+  if (job.status === "Active" && (liveQueueState === "open" || liveQueueState === "wrapping_up")) {
     const sortedCandidates = [...candidates].sort(
       (a, b) =>
         queueStatusSortWeight(a.status) - queueStatusSortWeight(b.status)
     );
 
-
     return (
       <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col h-full min-h-0 min-w-0 overflow-hidden">
+        {liveQueueState === "wrapping_up" && (
+          <div className="mb-4 p-3 rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/90 to-orange-50/40 text-xs text-amber-900 shadow-xs flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ease-out">
+            <div className="p-1.5 rounded-lg bg-amber-100/80 text-amber-700 shrink-0 mt-0.5 shadow-2xs">
+              <Clock className="w-4 h-4 text-amber-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="font-bold text-amber-950 text-xs tracking-tight">Window Wrapping Up</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-200/90 text-amber-900 uppercase tracking-wider shrink-0 whitespace-nowrap shadow-2xs">
+                  WRAPPING UP
+                </span>
+              </div>
+              <p className="text-[11px] font-medium text-amber-800/90 leading-snug">
+                Closed to new candidates. Waiting candidates remain protected.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-3 mb-3 shrink-0">
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Waiting Room</h3>
         </div>
