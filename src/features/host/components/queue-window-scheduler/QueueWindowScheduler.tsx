@@ -1,7 +1,7 @@
 import React from "react";
 import { QueueWindow, QueueWindowStatus } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
-import { Plus, AlertCircle } from "lucide-react";
+import { Plus, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import {
   hasFutureQueueWindow,
@@ -12,6 +12,7 @@ import {
 import { buildWindowRange, windowIsoToMs } from "@/common/utils/queueWindowDatetime";
 import { QueueWindowCard } from "./QueueWindowCard";
 import { AddWindowForm, type LocalWindowInput } from "./AddWindowForm";
+import { CloseDecisionModal } from "../queue/CloseDecisionModal";
 
 const formatWindowStatusError = (error: unknown, fallback: string): string => {
   const err = error as { response?: { data?: { data?: unknown; message?: unknown } } };
@@ -22,6 +23,7 @@ const formatWindowStatusError = (error: unknown, fallback: string): string => {
 
 interface Props {
   jobId: string;
+  job?: any;
   initialWindows?: QueueWindow[];
   onWindowsChange?: (windows: QueueWindow[]) => void;
   /** When true, shows Save and calls PUT /jobs/:id/windows */
@@ -31,6 +33,8 @@ interface Props {
   disabled?: boolean;
   /** When false, hides the Schedule Window button (e.g. for interviewers). Defaults to true. */
   showAddButton?: boolean;
+  isAdmin?: boolean;
+  onJobUpdated?: (job: any) => void;
 }
 
 const applyTimeBasedTransitions = (ws: QueueWindow[]): { next: QueueWindow[]; changed: boolean } => {
@@ -58,20 +62,27 @@ const applyTimeBasedTransitions = (ws: QueueWindow[]): { next: QueueWindow[]; ch
 
 export default function QueueWindowScheduler({
   jobId,
+  job,
   initialWindows = [],
   onWindowsChange,
   persistToApi = false,
   allowLiveControls = false,
   disabled = false,
   showAddButton = true,
+  isAdmin = true,
+  onJobUpdated,
 }: Props) {
   const sortDesc = (ws: QueueWindow[]) =>
     [...ws].sort((a, b) => windowIsoToMs(b.startTime) - windowIsoToMs(a.startTime));
 
   const [windows, setWindows] = React.useState<QueueWindow[]>(() => sortDesc(initialWindows));
+  const isWrappingUp = job?.queueStatus === "wrapping_up" || job?.pendingCloseDecision || windows.some(w => w.status === "wrapping_up" || w.pendingCloseDecision);
   const [isAdding, setIsAdding] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isUpdatingLiveStatus, setIsUpdatingLiveStatus] = React.useState(false);
+  const [decisionWindowId, setDecisionWindowId] = React.useState<string | null>(null);
+  const [decisionData, setDecisionData] = React.useState<{ waitingCount: number; activeInterviews: number } | null>(null);
+  const [isSubmittingDecision, setIsSubmittingDecision] = React.useState(false);
   const addFormRef = React.useRef<HTMLDivElement>(null);
 
   // Use a ref to access the latest onWindowsChange inside timers
@@ -277,6 +288,93 @@ export default function QueueWindowScheduler({
     }
   };
 
+  const handleSingleWindowEdit = async (
+    windowId: string,
+    payload: { starts_at?: string; ends_at?: string }
+  ) => {
+    if (!jobId || jobId === "new") return;
+    try {
+      const response = await jobsApi.updateSingleWindow(jobId, windowId, payload);
+      if (response.data?.job) {
+        onJobUpdated?.(response.data.job);
+        const updated = response.data.job.queueWindows || [];
+        setWindows(updated);
+        onWindowsChange?.(updated);
+      }
+      toast.success("Window schedule updated.");
+    } catch (error: any) {
+      console.error("Failed to edit window:", error);
+      const msg = error?.response?.data?.data || error?.response?.data?.message || "Failed to update window schedule.";
+      toast.error(typeof msg === "string" ? msg : "Failed to update window schedule.");
+      throw error;
+    }
+  };
+
+  const handleExtendWindow = async (windowId: string, minutes: number) => {
+    if (!jobId || jobId === "new") return;
+    try {
+      const response = await jobsApi.extendWindow(jobId, windowId, minutes);
+      if (response.data?.job) {
+        onJobUpdated?.(response.data.job);
+        const updated = response.data.job.queueWindows || [];
+        setWindows(updated);
+        onWindowsChange?.(updated);
+      }
+      toast.success(`Window extended by ${minutes} minutes.`);
+    } catch (error: any) {
+      console.error("Failed to extend window:", error);
+      const msg = error?.response?.data?.data || error?.response?.data?.message || "Failed to extend window.";
+      toast.error(typeof msg === "string" ? msg : "Failed to extend window.");
+    }
+  };
+
+  const handleCloseEarlyWindow = async (windowId: string) => {
+    if (!jobId || jobId === "new") return;
+    try {
+      const response = await jobsApi.closeWindowEarly(jobId, windowId);
+      if (response.data?.job) {
+        onJobUpdated?.(response.data.job);
+        const updated = response.data.job.queueWindows || [];
+        setWindows(updated);
+        onWindowsChange?.(updated);
+      }
+      toast.success(response.data?.message || "Window closed early.");
+
+      if (response.data?.pending_close_decision) {
+        setDecisionWindowId(windowId);
+        setDecisionData({
+          waitingCount: response.data.waiting_count || 0,
+          activeInterviews: response.data.active_interviews || 0,
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to close window early:", error);
+      const msg = error?.response?.data?.data || error?.response?.data?.message || "Failed to close window early.";
+      toast.error(typeof msg === "string" ? msg : "Failed to close window early.");
+    }
+  };
+
+  const handleConfirmCloseDecision = async (decision: "continue" | "release") => {
+    if (!jobId || !decisionWindowId) return;
+    setIsSubmittingDecision(true);
+    try {
+      const res = await jobsApi.closeWindowDecision(jobId, decisionWindowId, decision);
+      toast.success(res.data?.message || "Close decision recorded.");
+      setDecisionWindowId(null);
+      setDecisionData(null);
+      if (res.data?.job) {
+        onJobUpdated?.(res.data.job);
+        const updated = res.data.job.queueWindows || [];
+        setWindows(updated);
+        onWindowsChange?.(updated);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.data || "Failed to submit close decision.");
+    } finally {
+      setIsSubmittingDecision(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -322,6 +420,45 @@ export default function QueueWindowScheduler({
         </p>
       )}
 
+      {isWrappingUp && (
+        <div className="rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-3.5 sm:p-4 text-left shadow-xs animate-in fade-in slide-in-from-top-2 duration-300 ease-out">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-100/80 text-amber-700 shrink-0 mt-0.5 shadow-2xs">
+              <Clock className="w-4 h-4 text-amber-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="font-bold text-amber-950 text-xs tracking-tight uppercase">Window Wrapping Up</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-200/90 text-amber-900 uppercase tracking-wider shrink-0 shadow-2xs">
+                  Action Required
+                </span>
+              </div>
+              <p className="text-[11px] font-medium text-amber-800/90 leading-relaxed mb-3">
+                Closed to new candidates. Ongoing interviews & waiting queue remain protected.
+              </p>
+              {isAdmin && (job?.pendingCloseDecision || windows.some(w => w.pendingCloseDecision)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetWindowId = windows.find(w => w.status === "wrapping_up")?.id || windows[0]?.id;
+                    if (targetWindowId) {
+                      setDecisionWindowId(targetWindowId);
+                      setDecisionData({
+                        waitingCount: job?.applicants?.filter((a: any) => a.queue_status === "waiting")?.length || 0,
+                        activeInterviews: 0
+                      });
+                    }
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:opacity-95 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm touch-manipulation flex items-center justify-center gap-1.5"
+                >
+                  Decide Queue Action
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-3">
         {isAdding && (
           <div ref={addFormRef}>
@@ -342,10 +479,14 @@ export default function QueueWindowScheduler({
                 index={index}
                 disabled={disabled || !showAddButton}
                 isSaving={isSaving || isUpdatingLiveStatus}
+                isAdmin={isAdmin}
                 onDelete={handleDeleteWindow}
                 showLiveActions={showLiveControls}
                 onPauseLive={() => handleLiveStatusChange("paused")}
                 onResumeLive={() => handleLiveStatusChange("open")}
+                onSingleWindowEdit={handleSingleWindowEdit}
+                onExtendWindow={handleExtendWindow}
+                onCloseEarlyWindow={handleCloseEarlyWindow}
               />
             ))}
           </div>
@@ -357,6 +498,18 @@ export default function QueueWindowScheduler({
           </div>
         )}
       </div>
+
+      <CloseDecisionModal
+        isOpen={!!decisionWindowId}
+        waitingCount={decisionData?.waitingCount || 0}
+        activeInterviews={decisionData?.activeInterviews || 0}
+        onClose={() => {
+          setDecisionWindowId(null);
+          setDecisionData(null);
+        }}
+        onConfirmDecision={handleConfirmCloseDecision}
+        isSubmitting={isSubmittingDecision}
+      />
     </div>
   );
 }
