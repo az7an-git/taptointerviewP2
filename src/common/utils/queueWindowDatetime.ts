@@ -58,7 +58,8 @@ export function getWindowCountdownLabel(startsAt: string, serverNowMs: number): 
   if (Number.isNaN(targetMs) || Number.isNaN(serverNowMs)) return "Opens soon";
 
   const diffMs = targetMs - serverNowMs;
-  if (diffMs <= 0) return "Opens soon";
+  // if (diffMs <= 0) return "Opens soon";  
+  if (diffMs <= 0) return "Opening...";
 
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));

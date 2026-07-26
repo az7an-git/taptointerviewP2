@@ -3,7 +3,7 @@ import { ChevronDown, LucideIcon } from "lucide-react";
 
 interface SelectOption {
   value: string;
-  label: string;
+  label: React.ReactNode;
 }
 
 interface SelectProps {

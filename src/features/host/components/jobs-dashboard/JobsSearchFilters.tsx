@@ -2,14 +2,30 @@ import { /*Filter ,*/Briefcase, Search, X } from "lucide-react";
 import Select from "@/common/components/ui/Select";
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All statuses" },
+  {
+    value: "",
+    label: (
+      <>
+        <span className="sm:hidden">All</span>
+        <span className="hidden sm:inline">All statuses</span>
+      </>
+    )
+  },
   { value: "draft", label: "Draft" },
   { value: "active", label: "Active" },
   { value: "closed", label: "Closed" },
 ];
 
 const EMPLOYMENT_TYPE_FILTER_OPTIONS = [
-  { value: "", label: "All types" },
+  {
+    value: "",
+    label: (
+      <>
+        <span className="sm:hidden">All</span>
+        <span className="hidden sm:inline">All types</span>
+      </>
+    )
+  },
   { value: "full-time", label: "Full-time" },
   { value: "part-time", label: "Part-time" },
   { value: "contract", label: "Contract" },
@@ -71,7 +87,7 @@ export function JobsSearchFilters({
             ) : null}
           </div>
         </div>
-        <div className="w-full sm:w-[calc(50%-0.5rem)] lg:w-44 lg:shrink-0">
+        <div className="w-[calc(50%-0.5rem)] lg:w-44 lg:shrink-0">
           <Select
             label="Status"
             options={STATUS_FILTER_OPTIONS}
@@ -81,9 +97,9 @@ export function JobsSearchFilters({
             className="[&_label]:mb-1"
           />
         </div>
-        <div className="w-full sm:w-[calc(50%-0.5rem)] lg:w-44 lg:shrink-0">
+        <div className="w-[calc(50%-0.5rem)] lg:w-44 lg:shrink-0">
           <Select
-            label="Employment type"
+            label="Type"
             icon={Briefcase}
             options={EMPLOYMENT_TYPE_FILTER_OPTIONS}
             value={employmentTypeFilter}
