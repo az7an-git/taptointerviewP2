@@ -176,15 +176,17 @@ export function QueueCandidateEntry({
 
     return (
         <tr className={`transition-colors align-top ${rowHighlight}`}>
-            <td colSpan={4} className="px-0 align-top py-3 sm:py-4">
-                <div className="flex flex-col">
-                    <div className="grid grid-cols-[3rem_minmax(0,1fr)_8rem_11.25rem] min-h-10 shrink-0 items-center">
-                        <div className="px-4 sm:px-6">
-                            <span className="text-gray-400 font-bold text-xs sm:text-sm">
-                                #{index + 1}
-                            </span>
-                        </div>
+            <td colSpan={4} className="px-0 align-top h-full">
+                <div className="grid grid-cols-[3rem_minmax(0,1fr)_8rem_11.25rem] h-full items-stretch min-h-16">
+                    {/* Col 1 */}
+                    <div className="px-4 sm:px-6 border-r border-gray-200/50 flex pt-3 sm:pt-4 pb-3 sm:pb-4 h-full">
+                        <span className="text-gray-400 font-bold text-xs sm:text-sm pt-2.5">
+                            #{index + 1}
+                        </span>
+                    </div>
 
+                    {/* Col 2 */}
+                    <div className="flex flex-col min-w-0 border-r border-gray-200/50 py-3 sm:py-4 h-full">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 px-3 sm:px-6">
                             <div className="w-7 h-7 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 shrink-0 text-[10px] sm:text-sm">
                                 {initials}
@@ -208,37 +210,33 @@ export function QueueCandidateEntry({
                                 )}
                             </div>
                         </div>
-                        <div className="px-3 sm:px-6">
-                            <div className="text-xs sm:text-sm text-gray-500 font-medium whitespace-nowrap">
-                                {joinedLabel}
-                            </div>
-                        </div>
-                        <div className="px-3 sm:px-6">{statusAction}</div>
-                    </div>
 
-                    {hasScreening && (
-                        <div className="grid grid-cols-[3rem_minmax(0,1fr)_8rem_11.25rem]">
-                            <div aria-hidden />
-                            <div className="px-3 sm:px-6 pt-3 sm:pt-4 pb-3 sm:pb-4 pl-[calc(2.5rem+0.75rem)] min-w-0">
+                        {hasScreening && (
+                            <div className="px-3 sm:px-6 pt-3 sm:pt-4 pl-[calc(1.75rem+0.5rem+1.5rem)] sm:pl-[calc(2.5rem+0.75rem+1.5rem)] min-w-0">
                                 <ScreeningAnswersList answers={candidate.screeningAnswers} />
                             </div>
-                            <div aria-hidden />
-                            <div aria-hidden />
-                        </div>
-                    )}
+                        )}
 
-                    {sessionDetailLabel && (
-                        <div className="grid grid-cols-[3rem_minmax(0,1fr)_8rem_11.25rem]">
-                            <div aria-hidden />
-                            <div className="px-3 sm:px-6 pb-3 sm:pb-4 pl-[calc(2.5rem+0.75rem)] min-w-0">
+                        {sessionDetailLabel && (
+                            <div className="px-3 sm:px-6 pt-3 sm:pt-4 pl-[calc(1.75rem+0.5rem+1.5rem)] sm:pl-[calc(2.5rem+0.75rem+1.5rem)] min-w-0">
                                 <p className="text-[10px] text-gray-400 font-medium truncate">
                                     {sessionDetailLabel}
                                 </p>
                             </div>
-                            <div aria-hidden />
-                            <div aria-hidden />
+                        )}
+                    </div>
+
+                    {/* Col 3 */}
+                    <div className="px-3 sm:px-6 border-r border-gray-200/50 flex pt-3 sm:pt-4 pb-3 sm:pb-4 h-full">
+                        <div className="text-xs sm:text-sm text-gray-500 font-medium whitespace-nowrap pt-2.5">
+                            {joinedLabel}
                         </div>
-                    )}
+                    </div>
+
+                    {/* Col 4 */}
+                    <div className="px-3 sm:px-6 flex pt-3 sm:pt-4 pb-3 sm:pb-4 h-full">
+                        <div className="pt-1.5">{statusAction}</div>
+                    </div>
                 </div>
             </td>
         </tr>

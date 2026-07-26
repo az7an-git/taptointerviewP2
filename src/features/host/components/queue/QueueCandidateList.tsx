@@ -62,13 +62,13 @@ export function QueueCandidateList(props: QueueCandidateListProps) {
                 <table className="w-full table-fixed text-left border-collapse">
                     <thead className="sticky top-0 z-10 bg-white shadow-sm">
                         <tr className="border-b border-gray-200 bg-white text-[10px] sm:text-xs uppercase tracking-wider text-gray-500">
-                            <th className="hidden sm:table-cell px-4 sm:px-6 py-3 font-bold whitespace-nowrap w-12">
+                            <th className="hidden sm:table-cell px-4 sm:px-6 py-3 font-bold whitespace-nowrap w-12 border-r border-gray-200/50">
                                 #
                             </th>
-                            <th className="px-3 sm:px-6 py-3 font-bold whitespace-nowrap">
+                            <th className="px-3 sm:px-6 py-3 font-bold whitespace-nowrap border-r border-gray-200/50">
                                 Participant
                             </th>
-                            <th className="px-3 sm:px-6 py-3 font-bold whitespace-nowrap w-32">
+                            <th className="px-3 sm:px-6 py-3 font-bold whitespace-nowrap w-32 border-r border-gray-200/50">
                                 Joined
                             </th>
                             <th className="px-3 sm:px-6 py-3 font-bold whitespace-nowrap w-[180px]">

@@ -203,10 +203,13 @@ export function JobQueueCard({
         return null;
     }, [warningPayload, activeWindow?.endTime, now]);
 
+    const [isWindowActionLoading, setIsWindowActionLoading] = useState(false);
+
     // Admin extend window handler
     const handleAdminExtendWindow = async (minutes: number) => {
         const targetWindowId = activeWindow?.id || job.queueWindows?.[0]?.id;
         if (!targetWindowId) return;
+        setIsWindowActionLoading(true);
         try {
             await jobsApi.extendWindow(job.id, targetWindowId, minutes);
             toast.success(`Window extended by ${minutes} minutes.`);
@@ -214,6 +217,8 @@ export function JobQueueCard({
             onSessionChange?.();
         } catch (err: any) {
             toast.error(err?.response?.data?.data || "Failed to extend window.");
+        } finally {
+            setIsWindowActionLoading(false);
         }
     };
 
@@ -221,6 +226,7 @@ export function JobQueueCard({
     const handleAdminCloseEarlyWindow = async () => {
         const targetWindowId = activeWindow?.id || job.queueWindows?.[0]?.id;
         if (!targetWindowId) return;
+        setIsWindowActionLoading(true);
         try {
             const res = await jobsApi.closeWindowEarly(job.id, targetWindowId);
             toast.success(res.data.message || "Window closed early to new applicants.");
@@ -230,6 +236,8 @@ export function JobQueueCard({
             onSessionChange?.();
         } catch (err: any) {
             toast.error(err?.response?.data?.data || "Failed to close window early.");
+        } finally {
+            setIsWindowActionLoading(false);
         }
     };
 
@@ -419,6 +427,7 @@ export function JobQueueCard({
                     minutesRemaining={minutesRemaining}
                     waitingCount={waitingCount}
                     isAdmin={isAdmin}
+                    isActionLoading={isWindowActionLoading}
                     onExtend={handleAdminExtendWindow}
                     onCloseEarly={handleAdminCloseEarlyWindow}
                     onRequestExtension={() => setRecruiterRequestModalOpen(true)}
@@ -436,31 +445,29 @@ export function JobQueueCard({
             )}
 
             {(liveQueueState === "wrapping_up" || job.queueStatus === "wrapping_up") && (
-                <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-3.5 sm:p-4 text-left shadow-xs animate-in fade-in slide-in-from-top-2 duration-300 ease-out">
-                    <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-amber-100/80 text-amber-700 shrink-0 mt-0.5 shadow-2xs">
-                            <Clock className="w-4 h-4 text-amber-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                                <span className="font-bold text-amber-950 text-xs tracking-tight uppercase">Window Wrapping Up</span>
+                <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300 ease-out text-left">
+                    <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-xs uppercase">Window Wrapping Up</span>
+                            {(job.pendingCloseDecision || activeWindow?.pendingCloseDecision) && (
                                 <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-200/90 text-amber-900 uppercase tracking-wider shrink-0 shadow-2xs">
                                     Action Required
                                 </span>
-                            </div>
-                            <p className="text-[11px] font-medium text-amber-800/90 leading-relaxed mb-3">
-                                Closed to new candidates. Ongoing interviews & waiting queue remain protected.
-                            </p>
-                            {isAdmin && (job.pendingCloseDecision || activeWindow?.pendingCloseDecision) && (
-                                <button
-                                    type="button"
-                                    onClick={() => setCloseDecisionModalOpen(true)}
-                                    className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:opacity-95 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm touch-manipulation flex items-center justify-center gap-1.5"
-                                >
-                                    Decide Queue Action
-                                </button>
                             )}
                         </div>
+                        <p className="text-xs font-medium">
+                            Closed to new candidates. Ongoing interviews & waiting queue remain protected.
+                        </p>
+                        {isAdmin && (job.pendingCloseDecision || activeWindow?.pendingCloseDecision) && (
+                            <button
+                                type="button"
+                                onClick={() => setCloseDecisionModalOpen(true)}
+                                className="w-full sm:w-auto mt-3 px-4 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:opacity-95 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm touch-manipulation flex items-center justify-center gap-1.5"
+                            >
+                                Decide Queue Action
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
