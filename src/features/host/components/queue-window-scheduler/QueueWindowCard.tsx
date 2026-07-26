@@ -117,14 +117,14 @@ export function QueueWindowCard({
             </span>
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase shrink-0 whitespace-nowrap ${normalizedStatus === "Open"
-                  ? "bg-green-100 text-green-700 animate-pulse"
-                  : normalizedStatus === "wrapping_up"
-                    ? "bg-amber-100 text-amber-800 border border-amber-300"
-                    : normalizedStatus === "Paused"
-                      ? "bg-amber-100 text-amber-700"
-                      : isPast
-                        ? "bg-gray-200 text-gray-600"
-                        : "bg-blue-50 text-blue-600"
+                ? "bg-green-100 text-green-700 animate-pulse"
+                : normalizedStatus === "wrapping_up"
+                  ? "bg-amber-100 text-amber-800 border border-amber-300"
+                  : normalizedStatus === "Paused"
+                    ? "bg-amber-100 text-amber-700"
+                    : isPast
+                      ? "bg-gray-200 text-gray-600"
+                      : "bg-blue-50 text-blue-600"
                 }`}
             >
               {statusLabel}
@@ -258,10 +258,10 @@ export function QueueWindowCard({
 
       {/* Quick Action Controls on Active / Wrapping Up Windows */}
       {w.id && (normalizedStatus === "Open" || normalizedStatus === "wrapping_up" || normalizedStatus === "Paused") && isAdmin && (
-        <div className="pt-2.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 mt-2.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[10px] font-bold text-gray-400 uppercase shrink-0">Extend:</span>
-            <div className="flex items-center rounded-lg bg-orange-50 border border-orange-200/60 p-0.5 min-w-0">
+        <div className="pt-2.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 mt-2.5 w-full">
+          <div className="flex items-center gap-1.5 min-w-0 w-full sm:w-auto">
+            <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase shrink-0 hidden sm:block">Extend:</span>
+            <div className="flex items-center rounded-lg bg-orange-50 border border-orange-200/60 p-0.5 sm:p-1 min-w-0 w-full sm:w-auto">
               {[15, 30, 60, 120].map((mins, index, array) => {
                 const isThisLoading = quickActionLoading === `extend-${mins}`;
                 const isAnyLoading = !!quickActionLoading || isSaving;
@@ -278,16 +278,16 @@ export function QueueWindowCard({
                           setQuickActionLoading(null);
                         }
                       }}
-                      className="px-1.5 py-1 rounded-md hover:bg-orange-200/50 text-[#FF512F] text-[10px] font-bold transition-all flex items-center justify-center gap-0.5 cursor-pointer disabled:opacity-50 touch-manipulation min-h-[24px] whitespace-nowrap"
+                      className="flex-1 sm:flex-none px-1.5 py-1.5 sm:px-3 sm:py-2 rounded-md hover:bg-orange-200/50 text-[#FF512F] text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-0.5 cursor-pointer disabled:opacity-50 touch-manipulation min-h-[24px] sm:min-h-[28px] whitespace-nowrap"
                     >
                       {isThisLoading ? (
-                        <Spinner className="w-3 h-3 border-2 border-[#FF512F]/30 border-t-[#FF512F]" />
+                        <Spinner className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-[#FF512F]/30 border-t-[#FF512F]" />
                       ) : (
                         `+${mins >= 60 ? `${mins / 60}h` : `${mins}m`}`
                       )}
                     </button>
                     {index < array.length - 1 && (
-                      <div className="w-[1px] h-3 bg-orange-200/70 mx-0.5 shrink-0 rounded-full" />
+                      <div className="w-[1px] h-3 sm:h-4 bg-orange-200/70 mx-0.5 sm:mx-1 shrink-0 rounded-full" />
                     )}
                   </React.Fragment>
                 );
@@ -306,12 +306,12 @@ export function QueueWindowCard({
                 setQuickActionLoading(null);
               }
             }}
-            className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 touch-manipulation min-h-[24px] shrink-0"
+            className="w-full sm:w-auto px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer disabled:opacity-50 touch-manipulation min-h-[24px] sm:min-h-[28px] shrink-0"
           >
             {quickActionLoading === 'close-early' ? (
-              <Spinner className="w-3 h-3 border-2 border-red-600/30 border-t-red-600" />
+              <Spinner className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-red-600/30 border-t-red-600" />
             ) : (
-              <XCircle className="w-3 h-3 text-red-500" />
+              <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
             )}
             Close Early
           </button>

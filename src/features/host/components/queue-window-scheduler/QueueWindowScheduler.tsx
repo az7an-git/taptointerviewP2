@@ -45,7 +45,9 @@ const applyTimeBasedTransitions = (ws: QueueWindow[]): { next: QueueWindow[]; ch
     const endMs = windowIsoToMs(w.endTime);
     let newStatus = w.status;
 
-    if (w.status === "Scheduled" && now >= startMs && now < endMs) {
+    if (now < startMs) {
+      newStatus = "Scheduled";
+    } else if (w.status === "Scheduled" && now >= startMs && now < endMs) {
       newStatus = "Open";
     } else if ((w.status === "Open" || w.status === "Paused" || w.status === "Scheduled") && now >= endMs) {
       newStatus = "Closed";
@@ -421,40 +423,38 @@ export default function QueueWindowScheduler({
       )}
 
       {isWrappingUp && (
-        <div className="rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 to-orange-50/50 p-3.5 sm:p-4 text-left shadow-xs animate-in fade-in slide-in-from-top-2 duration-300 ease-out">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-amber-100/80 text-amber-700 shrink-0 mt-0.5 shadow-2xs">
-              <Clock className="w-4 h-4 text-amber-700" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="font-bold text-amber-950 text-xs tracking-tight uppercase">Window Wrapping Up</span>
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300 ease-out">
+          <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-bold text-xs uppercase">Window Wrapping Up</span>
+              {(job?.pendingCloseDecision || windows.some(w => w.pendingCloseDecision)) && (
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-200/90 text-amber-900 uppercase tracking-wider shrink-0 shadow-2xs">
                   Action Required
                 </span>
-              </div>
-              <p className="text-[11px] font-medium text-amber-800/90 leading-relaxed mb-3">
-                Closed to new candidates. Ongoing interviews & waiting queue remain protected.
-              </p>
-              {isAdmin && (job?.pendingCloseDecision || windows.some(w => w.pendingCloseDecision)) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const targetWindowId = windows.find(w => w.status === "wrapping_up")?.id || windows[0]?.id;
-                    if (targetWindowId) {
-                      setDecisionWindowId(targetWindowId);
-                      setDecisionData({
-                        waitingCount: job?.applicants?.filter((a: any) => a.queue_status === "waiting")?.length || 0,
-                        activeInterviews: 0
-                      });
-                    }
-                  }}
-                  className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:opacity-95 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm touch-manipulation flex items-center justify-center gap-1.5"
-                >
-                  Decide Queue Action
-                </button>
               )}
             </div>
+            <p className="text-xs font-medium">
+              Closed to new candidates. Ongoing interviews & waiting queue remain protected.
+            </p>
+            {isAdmin && (job?.pendingCloseDecision || windows.some(w => w.pendingCloseDecision)) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const targetWindowId = windows.find(w => w.status === "wrapping_up")?.id || windows[0]?.id;
+                  if (targetWindowId) {
+                    setDecisionWindowId(targetWindowId);
+                    setDecisionData({
+                      waitingCount: job?.applicants?.filter((a: any) => a.queue_status === "waiting")?.length || 0,
+                      activeInterviews: 0
+                    });
+                  }
+                }}
+                className="w-full sm:w-auto mt-3 px-4 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:opacity-95 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm touch-manipulation flex items-center justify-center gap-1.5"
+              >
+                Decide Queue Action
+              </button>
+            )}
           </div>
         </div>
       )}
