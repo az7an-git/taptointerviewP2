@@ -7,6 +7,7 @@ const JOB_QUEUE_EVENTS = [
   "participant_called",
   "participant_admitted",
   "participant_missed",
+  "participant_released",
   "queue_joined",
   "queue_status_changed",
   "session_started",

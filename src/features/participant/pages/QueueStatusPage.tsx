@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, Users, ShieldCheck, Zap, Loader2, PauseCircle, CheckCircle, Video, BellRing } from "lucide-react";
+import { Clock, Users, ShieldCheck, Zap, Loader2, PauseCircle, CheckCircle, Video, BellRing, XCircle } from "lucide-react";
 import publicApi from "@/api/publicApi";
+import { jobsApi } from "@/api/jobsApi";
 import { ParticipantHeader, ParticipantFooter } from "../components";
 import { useRealtimeChannel } from "@/hooks/useRealtimeChannel";
+import { formatWindowIso, parseWindowIso } from "@/common/utils/queueWindowDatetime";
 
 interface QueueStatusData {
   status: string;
@@ -13,6 +15,10 @@ interface QueueStatusData {
   participants_before_me: number;
   my_number: number;
   estimated_wait_minutes: number;
+  next_window?: {
+    starts_at: string;
+    ends_at: string;
+  } | null;
 }
 
 const POLL_INTERVAL_MS = 60_000;
@@ -40,6 +46,18 @@ function isInterviewFinishedStatus(status: string | undefined): boolean {
   return normalized === "resolved" || normalized === "pending_review" || normalized === "pending review";
 }
 
+function formatNextWindowNote(startsAt: string, endsAt: string): string {
+  const startParts = parseWindowIso(startsAt);
+  if (!startParts) return "You can rejoin the queue when the next window opens.";
+  const dateStr = new Date(startParts.year, startParts.month - 1, startParts.day).toLocaleDateString(
+    undefined,
+    { weekday: "short", month: "short", day: "numeric" }
+  );
+  const { time: startTime } = formatWindowIso(startsAt);
+  const { time: endTime } = formatWindowIso(endsAt);
+  return `Next window starts: ${dateStr}, ${startTime} – ${endTime}.`;
+}
+
 export default function QueueStatusPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -51,6 +69,46 @@ export default function QueueStatusPage() {
   const jobId = useMemo(() => localStorage.getItem("selectedJobId"), []);
 
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [nextWindow, setNextWindow] = useState<{ startTime: string; endTime: string } | null>(null);
+
+  // Fetch job details and find the next window when candidate is released/removed
+  useEffect(() => {
+    if (!queueData) return;
+    const status = queueData.status?.toLowerCase();
+    if ((status === "removed" || status === "declined") && slug && jobId) {
+      jobsApi.getJobDetailsByCompany(slug, jobId)
+        .then((res) => {
+          const job = res.data?.job;
+          if (job?.next_window) {
+            setNextWindow({
+              startTime: job.next_window.starts_at || job.next_window.startTime,
+              endTime: job.next_window.ends_at || job.next_window.endTime,
+            });
+            return;
+          }
+          const windowsList: any[] = job?.windows || job?.queueWindows || job?.queue_windows || [];
+          const now = Date.now();
+          const futureWindows = windowsList
+            .map((w: any) => ({
+              startTime: w.starts_at || w.startTime || w.start_time,
+              endTime: w.ends_at || w.endTime || w.end_time,
+              status: w.status,
+            }))
+            .filter((w) => {
+              const startMs = new Date(w.startTime).getTime();
+              return !isNaN(startMs) && startMs > now;
+            })
+            .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+          if (futureWindows.length > 0) {
+            setNextWindow(futureWindows[0]);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch job windows for next window details:", err);
+        });
+    }
+  }, [queueData?.status, slug, jobId]);
 
   // Sequence Enforcement: Ensure they went through the required flow and have a token
   useEffect(() => {
@@ -119,13 +177,7 @@ export default function QueueStatusPage() {
     return () => clearInterval(id);
   }, [secondsLeft !== null]);
 
-  useEffect(() => {
-    if (!queueData) return;
-    const status = queueData.status?.toLowerCase();
-    if (status === "declined" || status === "removed") {
-      navigate(`/company/${slug}`);
-    }
-  }, [queueData?.status, navigate, slug]);
+  // Removed auto-navigate for declined/removed to allow displaying next window info on this page.
 
   useRealtimeChannel(queueEntryId ? `queue_entry:${queueEntryId}` : null, {
     participant_called: (payload) => {
@@ -146,6 +198,9 @@ export default function QueueStatusPage() {
       void fetchStatus();
     },
     participant_missed: () => {
+      void fetchStatus();
+    },
+    participant_released: () => {
       void fetchStatus();
     },
     session_started: () => {
@@ -180,6 +235,8 @@ export default function QueueStatusPage() {
   useEffect(() => {
     fetchStatus();
     const status = queueData?.status?.toLowerCase();
+    // Terminal states — no need to keep polling
+    if (status === "removed" || status === "declined") return;
     const fastPoll =
       status === "called" ||
       status === "admitted" ||
@@ -223,6 +280,9 @@ export default function QueueStatusPage() {
     }
     if (isInterviewFinishedStatus(status)) {
       return "Your interview is complete. You can close this window if you want.";
+    }
+    if (status === "removed" || status === "declined") {
+      return "Your waiting room session has ended.";
     }
     return "You are currently in line. Please do not close this window.";
   })();
@@ -390,12 +450,63 @@ export default function QueueStatusPage() {
             </div>
           )}
 
+          {!loading && (queueData?.status?.toLowerCase() === "removed" || queueData?.status?.toLowerCase() === "declined") && (
+            <div className="flex flex-col items-center gap-7 py-8 animate-in fade-in duration-300">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+                  <XCircle className="w-12 h-12 text-red-400" />
+                </div>
+                <div className="absolute inset-0 rounded-full bg-red-500/10 blur-xl" />
+              </div>
+              <div className="space-y-3 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400">
+                  Position Released
+                </p>
+                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                  Removed from Queue
+                </h2>
+              </div>
+              {nextWindow ? (
+                <div className="w-full max-w-sm mx-auto bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 text-center space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <Clock className="w-4 h-4 text-[#FF512F]" />
+                    <p className="text-[10px] font-bold text-[#FF512F] uppercase tracking-wider">Next Available Window</p>
+                  </div>
+                  <p className="text-sm text-white font-semibold">
+                    {formatNextWindowNote(nextWindow.startTime, nextWindow.endTime)}
+                  </p>
+                  <p className="text-[11px] text-gray-500 font-medium">
+                    You can rejoin the queue when this window opens.
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full max-w-sm mx-auto bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 text-center space-y-1">
+                  <p className="text-sm text-gray-400 font-medium leading-relaxed">
+                    No future interview windows are currently scheduled.
+                  </p>
+                  <p className="text-[11px] text-gray-500 font-medium">
+                    Please check back later for new openings.
+                  </p>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate(`/company/${slug}`)}
+                className="bg-gradient-to-r from-[#FF512F] to-[#DD2476] hover:opacity-90 text-white font-bold py-2.5 px-8 rounded-lg transition-opacity cursor-pointer text-sm shadow-lg shadow-[#FF512F]/20"
+              >
+                Return to Jobs Page
+              </button>
+            </div>
+          )}
+
           {!loading &&
             !isAdmittedStatus(queueData?.status) &&
             !isConfirmedStatus(queueData?.status) &&
             !isInSessionStatus(queueData?.status) &&
             !isInterviewWrappingUpStatus(queueData?.status) &&
-            !isInterviewFinishedStatus(queueData?.status) && (
+            !isInterviewFinishedStatus(queueData?.status) &&
+            queueData?.status?.toLowerCase() !== "removed" &&
+            queueData?.status?.toLowerCase() !== "declined" && (
               <>
                 {/* Error state (non-blocking banner when we already have data) */}
                 {error && !queueData && (
