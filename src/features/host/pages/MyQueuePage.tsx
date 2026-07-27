@@ -28,8 +28,25 @@ export default function MyQueuePage() {
     const fetchJobs = useCallback(async () => {
         try {
             const response = await jobsApi.getActiveQueues();
-            setJobs(response.data);
-            globalQueueCache = response.data;
+            const activeQueues = response.data;
+
+            // Populate full queueWindows by fetching individual job details
+            const jobsWithWindows = await Promise.all(
+                activeQueues.map(async (q) => {
+                    try {
+                        const detailRes = await jobsApi.getJob(q.id);
+                        return {
+                            ...q,
+                            queueWindows: detailRes.data.queueWindows || [],
+                        };
+                    } catch (e) {
+                        return q;
+                    }
+                })
+            );
+
+            setJobs(jobsWithWindows);
+            globalQueueCache = jobsWithWindows;
         } catch (error) {
             console.error("Failed to fetch jobs for queue:", error);
         } finally {
