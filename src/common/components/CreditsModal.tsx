@@ -80,23 +80,23 @@ export default function CreditsModal({ isOpen, onClose, currentCredits }: Credit
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1 bg-white">
           {isLoadingPlans ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 landscape:grid-cols-3 md:grid-cols-3 gap-3 sm:gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="border border-gray-200 rounded-xl p-4 relative flex flex-col justify-between bg-white animate-pulse min-h-[148px]">
+                <div key={i} className="border border-gray-200 rounded-xl p-3 sm:p-4 relative flex flex-col justify-between bg-white animate-pulse min-h-[120px] sm:min-h-[148px]">
                   <div>
-                    <div className="h-7 w-16 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-6 sm:h-7 w-16 bg-gray-200 rounded mb-1"></div>
                     <div className="h-3 w-12 bg-gray-200 rounded mb-2.5"></div>
                     <div className="h-4 w-32 bg-gray-200 rounded"></div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <div className="h-6 w-14 bg-gray-200 rounded"></div>
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <div className="h-5 sm:h-6 w-14 bg-gray-200 rounded"></div>
                     <div className="w-4 h-4 rounded-full border border-gray-200"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 landscape:grid-cols-3 md:grid-cols-3 gap-3 sm:gap-4">
               {plans.map((pkg) => {
                 const isSelected = selectedPriceId === pkg.price_id;
                 const isPopular = pkg.credits === 50 || pkg.name.toLowerCase().includes("growth") || pkg.name.toLowerCase().includes("popular");

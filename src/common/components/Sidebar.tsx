@@ -34,7 +34,7 @@ function Sidebar({ onLogout, fullName, isOpen, onClose, role }: SidebarProps) {
         lg:relative lg:translate-x-0 lg:flex
       `}>
         {/* Brand & Close Button */}
-        <div className="h-14 flex items-center justify-between px-3 border-b border-gray-800/50">
+        <div className="h-14 flex items-center justify-between px-3 border-b border-gray-800/50 shrink-0">
           <Link
             onClick={(e) => {
               e.preventDefault();
@@ -60,15 +60,16 @@ function Sidebar({ onLogout, fullName, isOpen, onClose, role }: SidebarProps) {
           </button>
         </div>
 
-        <div className="p-4 flex-1">
+        {/* Scrollable Navigation Area */}
+        <div className="p-4 flex-1 overflow-y-auto min-h-0">
           {/* Nav */}
           <Navigation onItemClick={onClose} />
         </div>
 
         {/* Bottom Profile & Logout */}
-        <div className="bg-[#0B0F19]">
-          <div className="py-4 px-3 items-center gap-2 border-b border-gray-800/40 flex">
-            <div className="w-10 h-10 bg-[#FF512F] rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-white text-sm">
+        <div className="bg-[#0B0F19] shrink-0 border-t border-gray-800/40">
+          <div className="py-3 px-3 items-center gap-2 border-b border-gray-800/40 flex">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#FF512F] rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-white text-sm">
               {initials}
             </div>
             <div className="min-w-0">
@@ -83,7 +84,7 @@ function Sidebar({ onLogout, fullName, isOpen, onClose, role }: SidebarProps) {
 
           {/* Logout Button (Mobile only) */}
           <button
-            className="w-full p-4 gap-2 text-sm font-medium text-gray-400 hover:text-[#FF3B30] hover:bg-[#111827]/40 transition-colors cursor-pointer flex items-center justify-center lg:hidden"
+            className="w-full py-3 px-4 gap-2 text-sm font-medium text-gray-400 hover:text-[#FF3B30] hover:bg-[#111827]/40 transition-colors cursor-pointer flex items-center justify-center lg:hidden"
             onClick={onLogout}
           >
             <LogOut className="w-5 h-5" />
