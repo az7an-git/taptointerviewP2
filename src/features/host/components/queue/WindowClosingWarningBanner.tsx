@@ -1,4 +1,4 @@
-import { Clock, AlertTriangle, Plus, XCircle, Send } from "lucide-react";
+import { Clock, AlertTriangle, Plus, XCircle } from "lucide-react";
 import { Spinner } from "@/common/ui/Spinner";
 
 interface WindowClosingWarningBannerProps {
@@ -43,7 +43,7 @@ export function WindowClosingWarningBanner({
                             <span className="text-amber-950 font-bold">
                                 {waitingCount} candidate{waitingCount === 1 ? "" : "s"}
                             </span>{" "}
-                            remain in queue.
+                            {waitingCount === 1 ? "remains" : "remain"} in queue.
                         </p>
                     </div>
                 </div>
@@ -91,25 +91,14 @@ export function WindowClosingWarningBanner({
                             </button>
                         </>
                     ) : (
-                        <>
-                            <button
-                                type="button"
-                                disabled={isActionLoading}
-                                onClick={() => onRequestExtension?.()}
-                                className="w-full sm:w-auto justify-center px-3 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50 touch-manipulation"
-                            >
-                                <Send className="w-3.5 h-3.5" />
-                                Request More Time
-                            </button>
-                            <button
-                                type="button"
-                                disabled={isActionLoading}
-                                onClick={() => onRequestEarlyClose?.()}
-                                className="w-full sm:w-auto justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 touch-manipulation"
-                            >
-                                Request Close
-                            </button>
-                        </>
+                        <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => (onRequestExtension || onRequestEarlyClose)?.()}
+                            className="w-full sm:w-auto justify-center px-3 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50 touch-manipulation"
+                        >
+                            Window Request
+                        </button>
                     )}
                 </div>
             </div>

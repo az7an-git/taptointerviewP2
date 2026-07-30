@@ -1,7 +1,7 @@
 import React from "react";
 import { QueueWindow, QueueWindowStatus } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
-import { Plus, AlertCircle, Clock } from "lucide-react";
+import { Plus, AlertCircle, Clock, Bell } from "lucide-react";
 import { toast } from "sonner";
 import {
   hasFutureQueueWindow,
@@ -13,6 +13,9 @@ import { buildWindowRange, windowIsoToMs } from "@/common/utils/queueWindowDatet
 import { QueueWindowCard } from "./QueueWindowCard";
 import { AddWindowForm, type LocalWindowInput } from "./AddWindowForm";
 import { CloseDecisionModal } from "../queue/CloseDecisionModal";
+import { WindowRequestsInboxModal } from "../queue/WindowRequestsInboxModal";
+import { WindowRequest } from "@/types/job";
+import { useJobRealtime } from "@/hooks/useJobRealtime";
 
 const formatWindowStatusError = (error: unknown, fallback: string): string => {
   const err = error as { response?: { data?: { data?: unknown; message?: unknown } } };
@@ -86,6 +89,39 @@ export default function QueueWindowScheduler({
   const [decisionData, setDecisionData] = React.useState<{ waitingCount: number; activeInterviews: number } | null>(null);
   const [isSubmittingDecision, setIsSubmittingDecision] = React.useState(false);
   const addFormRef = React.useRef<HTMLDivElement>(null);
+
+  const [pendingRequests, setPendingRequests] = React.useState<WindowRequest[]>([]);
+  const [windowRequestsInboxOpen, setWindowRequestsInboxOpen] = React.useState(false);
+  const [processingRequestId, setProcessingRequestId] = React.useState<string | null>(null);
+
+  const fetchPendingRequests = React.useCallback(async () => {
+    if (!isAdmin || !jobId || jobId === "new") return;
+    try {
+      const res = await jobsApi.listWindowRequests(jobId);
+      const pending = (res.data || []).filter((r: WindowRequest) => r.status === "pending");
+      setPendingRequests(pending);
+    } catch {
+      // Ignore
+    }
+  }, [jobId, isAdmin]);
+
+  React.useEffect(() => {
+    void fetchPendingRequests();
+  }, [fetchPendingRequests]);
+
+  useJobRealtime(jobId && jobId !== "new" ? jobId : undefined, () => { }, {
+    onWindowRequestCreated: () => {
+      if (isAdmin) {
+        toast.info("New window request received from recruiter.");
+        void fetchPendingRequests();
+      }
+    },
+    onWindowRequestReviewed: () => {
+      if (isAdmin) {
+        void fetchPendingRequests();
+      }
+    }
+  });
 
   // Use a ref to access the latest onWindowsChange inside timers
   const onWindowsChangeRef = React.useRef(onWindowsChange);
@@ -377,10 +413,49 @@ export default function QueueWindowScheduler({
     }
   };
 
+  const handleReviewRequest = async (
+    requestId: string,
+    action: "approve" | "decline",
+    extendMinutesOverride?: number
+  ) => {
+    if (!jobId || jobId === "new") return;
+    setProcessingRequestId(requestId);
+    try {
+      const response = await jobsApi.reviewWindowRequest(jobId, requestId, {
+        action,
+        extend_minutes: extendMinutesOverride,
+      });
+      toast.success(action === "approve" ? "Request approved!" : "Request declined.");
+      setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
+      if (response.data?.job) {
+        onJobUpdated?.(response.data.job);
+        const updated = response.data.job.queueWindows || [];
+        setWindows(updated);
+        onWindowsChange?.(updated);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.data || "Failed to review request.");
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Queue Windows</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Queue Windows</h3>
+          {isAdmin && pendingRequests.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setWindowRequestsInboxOpen(true)}
+              className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-[#FF512F] border border-orange-200 hover:bg-orange-200 transition-colors flex items-center gap-1 cursor-pointer animate-pulse"
+            >
+              <Bell className="w-3 h-3" />
+              {pendingRequests.length} Request{pendingRequests.length === 1 ? "" : "s"}
+            </button>
+          )}
+        </div>
         {!disabled && showAddButton && (
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -509,6 +584,14 @@ export default function QueueWindowScheduler({
         }}
         onConfirmDecision={handleConfirmCloseDecision}
         isSubmitting={isSubmittingDecision}
+      />
+
+      <WindowRequestsInboxModal
+        isOpen={windowRequestsInboxOpen}
+        requests={pendingRequests}
+        processingRequestId={processingRequestId}
+        onClose={() => setWindowRequestsInboxOpen(false)}
+        onReviewRequest={handleReviewRequest}
       />
     </div>
   );

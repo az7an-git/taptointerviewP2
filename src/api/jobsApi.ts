@@ -718,11 +718,18 @@ export const jobsApi = {
   listWindowRequests: async (jobId: string, status?: string) => {
     const response = await authApi.get<{
       status: string;
-      data: WindowRequest[];
+      data: WindowRequest[] | WindowRequest;
     }>(`/jobs/${jobId}/window-requests`, {
       params: status ? { status } : undefined,
     });
-    return response.data;
+
+    const rawData = response.data.data;
+    const arrayData = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+
+    return {
+      status: response.data.status,
+      data: arrayData,
+    };
   },
 
   /** Review (approve/decline) a recruiter request (Admin) */
