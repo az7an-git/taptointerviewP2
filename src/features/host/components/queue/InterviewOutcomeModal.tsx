@@ -237,18 +237,18 @@ export function InterviewOutcomeModal({
                     )}
                 </div>
 
-                <div className="px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-100 bg-white flex flex-col gap-2.5 sm:flex-row sm:justify-end sm:gap-3 shrink-0">
+                <div className="px-4 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-gray-100 bg-white flex flex-row justify-end gap-2.5 sm:gap-3 shrink-0">
                     <button
                         onClick={onClose}
                         disabled={isSaving}
-                        className="w-full sm:w-auto px-4 py-3 sm:py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50 touch-manipulation min-h-[44px]"
+                        className="w-1/2 sm:w-auto px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50 touch-manipulation min-h-[40px] sm:min-h-[44px] flex items-center justify-center text-center"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={!selected || isSaving}
-                        className="w-full sm:w-auto px-4 py-3 sm:py-2 text-sm font-bold text-white bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation min-h-[44px]"
+                        className="w-1/2 sm:w-auto px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation min-h-[40px] sm:min-h-[44px] text-center"
                     >
                         {isSaving ? (
                             <>
