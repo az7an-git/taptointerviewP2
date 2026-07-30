@@ -151,8 +151,9 @@ export function JobQueueCard({
     const fetchPendingRequests = useCallback(async () => {
         if (!isAdmin) return;
         try {
-            const res = await jobsApi.listWindowRequests(job.id, "pending");
-            setPendingRequests(res.data || []);
+            const res = await jobsApi.listWindowRequests(job.id);
+            const pending = (res.data || []).filter((r: WindowRequest) => r.status === "pending");
+            setPendingRequests(pending);
         } catch {
             // Ignore error
         }
@@ -187,7 +188,8 @@ export function JobQueueCard({
             }
         },
         onWindowRequestReviewed: (payload) => {
-            toast.info(`Window request was ${payload.action}.`);
+            const actionText = payload.action || payload.request?.status || "processed";
+            toast.info(`Window request was ${actionText}.`);
             onSessionChange?.();
         },
     });
@@ -388,7 +390,7 @@ export function JobQueueCard({
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                    {!isAdmin && activeWindow?.id && (
+                    {!isAdmin && activeWindow?.id && (minutesRemaining === null || minutesRemaining <= 0) && (
                         <button
                             type="button"
                             onClick={() => setRecruiterRequestModalOpen(true)}
