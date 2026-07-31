@@ -21,6 +21,7 @@ interface ApplicantDetailsModalProps {
   applicant: JobApplicant | null;
   isOpen: boolean;
   onClose: () => void;
+  isHistorical?: boolean;
 }
 
 export function ApplicantDetailsModal({
@@ -28,19 +29,24 @@ export function ApplicantDetailsModal({
   applicant,
   isOpen,
   onClose,
+  isHistorical = false,
 }: ApplicantDetailsModalProps) {
   useBodyScrollLock(isOpen);
 
   const [detailedApplicant, setDetailedApplicant] = useState<JobApplicant | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editedNotes, setEditedNotes] = useState<string>("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !applicant) {
       setDetailedApplicant(null);
+      setEditedNotes("");
       return;
     }
 
     setDetailedApplicant(applicant);
+    setEditedNotes(applicant.internalNotes || "");
 
     if (!jobId) return;
 
@@ -71,6 +77,21 @@ export function ApplicantDetailsModal({
   if (!isOpen || !applicant) return null;
 
   const currentApplicant = detailedApplicant || applicant;
+
+  const handleSaveNotes = async () => {
+    if (!jobId || !currentApplicant.queueEntryId) return;
+    setIsSavingNotes(true);
+    try {
+      // Milestone 3 API call
+      const res = await jobsApi.updateApplicantNotes(jobId, currentApplicant.queueEntryId, editedNotes);
+      setDetailedApplicant(res.data);
+      // Optional: show toast here
+    } catch (err) {
+      console.error("Failed to update notes", err);
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
 
   const formatDuration = (seconds: number | null) => {
     if (seconds === null || seconds === undefined) return "N/A";
@@ -214,6 +235,14 @@ export function ApplicantDetailsModal({
                     {getOutcomeLabel(currentApplicant.outcome)}
                   </span>
                 </div>
+                {currentApplicant.interviewedBy && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-400 font-medium">Interviewer:</span>
+                    <span className="text-gray-700 font-bold">
+                      {`${currentApplicant.interviewedBy.firstName || ""} ${currentApplicant.interviewedBy.lastName || ""}`.trim()}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-400 font-medium">Rating:</span>
                   {renderStars(currentApplicant.rating)}
@@ -242,9 +271,32 @@ export function ApplicantDetailsModal({
               <FileText className="w-3.5 h-3.5" />
               Internal Notes
             </h3>
-            <p className="text-xs text-gray-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-gray-150 min-h-[60px] whitespace-pre-wrap break-words">
-              {currentApplicant.internalNotes || "No notes captured for this candidate yet."}
-            </p>
+            {isHistorical ? (
+              <div className="space-y-2">
+                <textarea
+                  value={editedNotes}
+                  onChange={(e) => setEditedNotes(e.target.value)}
+                  disabled={isSavingNotes}
+                  className="w-full text-xs text-gray-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-gray-200 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#FF512F]/30 focus:border-[#FF512F] resize-y"
+                  placeholder="Add notes for this historical candidate..."
+                />
+                {editedNotes !== (currentApplicant.internalNotes || "") && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveNotes}
+                      disabled={isSavingNotes}
+                      className="px-3 py-1.5 text-xs font-bold text-white bg-[#FF512F] hover:bg-[#E04020] rounded-md transition-colors disabled:opacity-50"
+                    >
+                      {isSavingNotes ? "Saving..." : "Save Notes"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-gray-150 min-h-[60px] whitespace-pre-wrap break-words">
+                {currentApplicant.internalNotes || "No notes captured for this candidate yet."}
+              </p>
+            )}
           </div>
 
           {/* Screening Questions Answers if any */}
