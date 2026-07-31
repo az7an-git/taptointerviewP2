@@ -96,6 +96,12 @@ export interface JobApplicant {
   createdAt: string;
   updatedAt: string;
   participant: JobParticipant;
+  // Milestone 3: Interviewer tracking
+  interviewedBy?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
 }
 
 export interface SaveOutcomePayload {
@@ -127,6 +133,14 @@ export interface Job {
   queuePauseStatus?: string;
   queueStatus?: "open" | "wrapping_up" | "paused" | "scheduled" | "closed" | string;
   pendingCloseDecision?: boolean;
+  // Milestone 3: Job Funnel Metrics
+  funnelMetrics?: JobFunnelMetrics;
+}
+
+export interface JobFunnelMetrics {
+  views: number;
+  qualified: number;
+  disqualified: number;
 }
 
 export type WindowRequestType = "extend" | "early_close";
