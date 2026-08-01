@@ -173,4 +173,19 @@
   .scrollbar-brand::-webkit-scrollbar-thumb:hover {
     background: #ff6b00;
   }
+
+  .animate-shimmer-sweep {
+    animation: shimmer-sweep 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(200%);
+  }
 }

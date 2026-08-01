@@ -223,27 +223,27 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
 
                     {isPhoneVerified ? (
                         <div className="space-y-3">
-                            <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-3 rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-emerald-500 text-white rounded-full p-1">
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 p-3 rounded-lg">
+                                    <div className="bg-emerald-500 text-white rounded-full p-1 flex-shrink-0">
                                         <Check className="w-3.5 h-3.5" />
                                     </div>
-                                    <div>
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-xs font-bold text-emerald-800">Phone Verified</p>
-                                        <p className="text-xs text-emerald-600 font-medium">{phone}</p>
+                                        <p className="text-xs text-emerald-600 font-medium break-all">{phone}</p>
                                     </div>
                                 </div>
+                                <p className="text-xs text-gray-500 leading-normal">
+                                    Your mobile phone number is linked and verified. SMS notification channels are unlocked.
+                                </p>
                                 <button
                                     type="button"
                                     onClick={() => setIsRemoveModalOpen(true)}
                                     className="text-xs text-red-500 hover:text-red-700 font-bold hover:underline cursor-pointer"
                                 >
-                                    Remove
+                                    Remove Phone Number
                                 </button>
                             </div>
-                            <p className="text-xs text-gray-500 leading-normal">
-                                Your mobile phone number is linked and verified. SMS notification channels are unlocked.
-                            </p>
                         </div>
                     ) : (
                         <div className="space-y-4">
