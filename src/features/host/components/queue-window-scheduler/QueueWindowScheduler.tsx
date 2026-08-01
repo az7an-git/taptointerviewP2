@@ -367,35 +367,39 @@ export default function QueueWindowScheduler({
   };
 
   const handleCloseEarlyWindow = async (windowId: string) => {
-    if (!jobId || jobId === "new") return;
-    try {
-      const response = await jobsApi.closeWindowEarly(jobId, windowId);
-      if (response.data?.job) {
-        onJobUpdated?.(response.data.job);
-        const updated = response.data.job.queueWindows || [];
-        setWindows(updated);
-        onWindowsChange?.(updated);
-      }
-      toast.success(response.data?.message || "Window closed early.");
-
-      if (response.data?.pending_close_decision) {
-        setDecisionWindowId(windowId);
-        setDecisionData({
-          waitingCount: response.data.waiting_count || 0,
-          activeInterviews: response.data.active_interviews || 0,
-        });
-      }
-    } catch (error: any) {
-      console.error("Failed to close window early:", error);
-      const msg = error?.response?.data?.data || error?.response?.data?.message || "Failed to close window early.";
-      toast.error(typeof msg === "string" ? msg : "Failed to close window early.");
-    }
+    const w = windows.find((x) => x.id === windowId);
+    if (!w) return;
+    setDecisionWindowId(windowId);
+    setDecisionData({
+      waitingCount: job?.applicants?.filter((a: any) => a.queue_status === "waiting" || a.status === "waiting")?.length || 0,
+      activeInterviews: 0,
+    });
   };
 
   const handleConfirmCloseDecision = async (decision: "continue" | "release") => {
     if (!jobId || !decisionWindowId) return;
     setIsSubmittingDecision(true);
     try {
+      let earlyRes: any = null;
+      try {
+        earlyRes = await jobsApi.closeWindowEarly(jobId, decisionWindowId);
+      } catch {
+        // Ignore if already marked close early or wrapping up
+      }
+
+      if (earlyRes?.data?.pending_close_decision === false || decisionData?.waitingCount === 0) {
+        toast.success(earlyRes?.data?.message || "Window closed early.");
+        setDecisionWindowId(null);
+        setDecisionData(null);
+        if (earlyRes?.data?.job) {
+          onJobUpdated?.(earlyRes.data.job);
+          const updated = earlyRes.data.job.queueWindows || [];
+          setWindows(updated);
+          onWindowsChange?.(updated);
+        }
+        return;
+      }
+
       const res = await jobsApi.closeWindowDecision(jobId, decisionWindowId, decision);
       toast.success(res.data?.message || "Close decision recorded.");
       setDecisionWindowId(null);
@@ -407,7 +411,14 @@ export default function QueueWindowScheduler({
         onWindowsChange?.(updated);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.data || "Failed to submit close decision.");
+      const errorMsg = err?.response?.data?.data || err?.response?.data?.message;
+      if (typeof errorMsg === "string" && errorMsg.includes("No pending close decision")) {
+        toast.success("Window closed early.");
+        setDecisionWindowId(null);
+        setDecisionData(null);
+      } else {
+        toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to submit close decision.");
+      }
     } finally {
       setIsSubmittingDecision(false);
     }
@@ -578,6 +589,11 @@ export default function QueueWindowScheduler({
         isOpen={!!decisionWindowId}
         waitingCount={decisionData?.waitingCount || 0}
         activeInterviews={decisionData?.activeInterviews || 0}
+        isCloseEarly={
+          decisionWindowId
+            ? !(windows.find((w) => w.id === decisionWindowId)?.status === "wrapping_up" || job?.queueStatus === "wrapping_up")
+            : false
+        }
         onClose={() => {
           setDecisionWindowId(null);
           setDecisionData(null);

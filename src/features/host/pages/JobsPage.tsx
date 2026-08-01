@@ -1,206 +1,227 @@
-export type JobStatus = "Draft" | "Active" | "Paused" | "Closed";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Link } from "react-router-dom";
+import PageHeader from "@/common/ui/PageHeader";
+import { Plus } from "lucide-react";
+import TablePagination from "@/common/ui/TablePagination";
+import { useAuth } from "@/context/AuthContext";
+import { Job, JobStatus } from "@/types/job";
 
-export interface ScreeningQuestionOption {
-  text: string;
-  isDealBreaker: boolean;
-  sortOrder?: number;
+import { jobsApi, JobsPagination } from "@/api/jobsApi";
+import { toast } from "sonner";
+import { JobsSkeleton } from "../components";
+import { JobsSearchFilters, JobsDashboardRow } from "../components";
+import { getPostNewJobHref, POST_JOB_NEW_INTENT } from "../utils/postJobWizardStorage";
+
+const JOBS_PAGE_SIZE = 10;
+
+interface JobsCache {
+  jobs: Job[];
+  pagination: JobsPagination;
+  statusFilter: string;
+  employmentTypeFilter: string;
+  searchFilter: string;
+  page: number;
+  userId: string;
 }
 
-export interface ScreeningQuestion {
-  id?: string;
-  text: string;
-  sortOrder?: number;
-  complianceStatus?: string;
-  complianceNotes?: string | null;
-  options: ScreeningQuestionOption[];
-}
+const SEARCH_DEBOUNCE_MS = 400;
 
-export type QueueWindowStatus = "Scheduled" | "Open" | "Closed" | "Paused" | "Wrapping_up" | "wrapping_up";
+let globalJobsCache: JobsCache | null = null;
 
-/** Body for PUT /jobs/:jobId/windows/status */
-export type QueueWindowLiveStatusPayload = "open" | "paused";
+export default function JobsPage() {
+  const { user } = useAuth();
+  const basePath = useMemo(() => (user?.role === "interviewer" ? "/interviewer" : "/admin"), [user?.role]);
 
-export interface QueueWindow {
-  id?: string;
-  startTime: string; // UTC ISO (Z), maps to starts_at
-  endTime: string; // UTC ISO (Z), maps to ends_at
-  status?: QueueWindowStatus;
-  pendingCloseDecision?: boolean;
-  closingWarningSentAt?: string | null;
-}
+  const hasCache = globalJobsCache !== null && globalJobsCache.userId === user?.id;
 
-export interface JobReview {
-  ready: boolean;
-  jobStatus: string;
-  title: string;
-  screeningQuestions: number;
-  dealBreakerAnswers: number;
-  interviewWindows: number;
-  creditsRequired: string;
-  canPublish: boolean;
-  publishErrors: string[];
-}
+  const [statusFilter, setStatusFilter] = useState(hasCache ? globalJobsCache!.statusFilter : "");
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState(
+    hasCache ? globalJobsCache!.employmentTypeFilter : ""
+  );
+  const [searchQuery, setSearchQuery] = useState(hasCache ? globalJobsCache!.searchFilter : "");
+  const [searchFilter, setSearchFilter] = useState(hasCache ? globalJobsCache!.searchFilter : "");
+  const [page, setPage] = useState(hasCache ? globalJobsCache!.page : 1);
+  const [jobs, setJobs] = useState<Job[]>(hasCache ? globalJobsCache!.jobs : []);
+  const [isLoading, setIsLoading] = useState(!hasCache);
+  const [pagination, setPagination] = useState<JobsPagination>(
+    hasCache
+      ? globalJobsCache!.pagination
+      : {
+        page: 1,
+        limit: JOBS_PAGE_SIZE,
+        total: 0,
+        totalPages: 1,
+      }
+  );
 
-export interface ComplianceReviewResult {
-  jobId: string;
-  reviewedCount: number;
-  reviewedWithClaudeCount: number;
-  skippedApprovedCount: number;
-  screeningQuestions: ScreeningQuestion[];
-}
+  const isInitialMount = useRef(true);
+  const prevSearchFilter = useRef(searchFilter);
 
-export interface JobParticipant {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-}
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearchFilter(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
-export type QueueEntryStatus =
-  | "waiting"
-  | "called"
-  | "admitted"
-  | "confirmed"
-  | "in_session"
-  | "pending_outcome"
-  | "resolved"
-  | "removed"
-  | "declined";
+  useEffect(() => {
+    if (prevSearchFilter.current !== searchFilter) {
+      prevSearchFilter.current = searchFilter;
+      setPage(1);
+    }
+  }, [searchFilter]);
 
-export type QueueEntryOutcome = "hired" | "follow_up" | "not_a_fit";
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        if (!globalJobsCache || !isInitialMount.current) {
+          setIsLoading(true);
+        }
+        const response = await jobsApi.getJobs({
+          page,
+          limit: JOBS_PAGE_SIZE,
+          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(employmentTypeFilter ? { employment_type: employmentTypeFilter } : {}),
+          ...(searchFilter ? { search: searchFilter } : {}),
+        });
+        setJobs(response.data);
+        setPagination(response.pagination);
+        globalJobsCache = {
+          jobs: response.data,
+          pagination: response.pagination,
+          statusFilter,
+          employmentTypeFilter,
+          searchFilter,
+          page,
+          userId: user?.id || "",
+        };
+      } catch (error) {
+        console.error("Failed to fetch jobs from API:", error);
+        setJobs([]);
+        setPagination({ page: 1, limit: JOBS_PAGE_SIZE, total: 0, totalPages: 1 });
+        toast.error("Failed to load your job postings.");
+      } finally {
+        setIsLoading(false);
+        isInitialMount.current = false;
+      }
+    };
 
-export interface ScreeningAnswer {
-  questionId: string;
-  question: string;
-  sortOrder: number;
-  selectedOptionIndex: number;
-  selectedOptionText: string;
-}
+    fetchJobs();
+  }, [page, statusFilter, employmentTypeFilter, searchFilter, user?.id]);
 
-export interface JobApplicant {
-  queueEntryId: string;
-  status: string;
-  joinedAt: string | null;
-  calledAt: string | null;
-  admissionExpiresAt: string | null;
-  sessionStartedAt: string | null;
-  sessionEndedAt: string | null;
-  sessionDurationSeconds: number | null;
-  outcome: QueueEntryOutcome | null;
-  rating: number | null;
-  internalNotes: string | null;
-  screeningAnswers: ScreeningAnswer[];
-  roomUrl?: string;
-  hostToken?: string;
-  createdAt: string;
-  updatedAt: string;
-  participant: JobParticipant;
-  // Milestone 3: Interviewer tracking
-  interviewedBy?: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-  } | null;
-}
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  };
 
-export interface SaveOutcomePayload {
-  outcome: QueueEntryOutcome;
-  rating?: number | null;
-  internal_notes?: string | null;
-}
+  const handleEmploymentTypeFilterChange = (value: string) => {
+    setEmploymentTypeFilter(value);
+    setPage(1);
+  };
 
-export interface Job {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  type: string;
-  department: string;
-  requirements: string;
-  salaryMin: number;
-  salaryMax: number;
-  status: JobStatus;
-  companyId: string;
-  createdAt: string;
-  updatedAt: string;
-  screeningQuestions?: ScreeningQuestion[];
-  queueWindows?: QueueWindow[];
-  queueCount?: number;
-  totalCount?: number;
-  applicants?: JobApplicant[];
-  /** From active_queues API when window list is not included */
-  queuePauseStatus?: string;
-  queueStatus?: "open" | "wrapping_up" | "paused" | "scheduled" | "closed" | string;
-  pendingCloseDecision?: boolean;
-  // Milestone 3: Job Funnel Metrics
-  funnelMetrics?: JobFunnelMetrics;
-}
+  const handleCloseJob = async (id: string) => {
+    try {
+      await jobsApi.closeJob(id);
+      let updatedJobs;
+      if (statusFilter && statusFilter !== "closed") {
+        updatedJobs = jobs.filter((job) => job.id !== id);
+      } else {
+        updatedJobs = jobs.map((job) => (job.id === id ? { ...job, status: "Closed" as JobStatus } : job));
+      }
+      setJobs(updatedJobs);
+      if (globalJobsCache) {
+        globalJobsCache.jobs = updatedJobs;
+      }
+      toast.success("Job closed successfully!");
+    } catch (error: any) {
+      console.error("Failed to close job:", error);
+      toast.error("Failed to close job posting.");
+    }
+  };
 
-export interface JobFunnelMetrics {
-  views: number;
-  qualified: number;
-  disqualified: number;
-}
+  const hasActiveFilters = useMemo(
+    () => Boolean(statusFilter || employmentTypeFilter || searchFilter),
+    [statusFilter, employmentTypeFilter, searchFilter]
+  );
+  const showPagination = useMemo(() => pagination.totalPages > 1, [pagination.totalPages]);
+  const showSkeleton = isLoading && jobs.length === 0;
+  const isRefreshing = isLoading && jobs.length > 0;
 
-export type WindowRequestType = "extend" | "early_close";
-export type WindowRequestStatus = "pending" | "approved" | "declined";
+  return (
+    <div className="space-y-6 animate-page-fade-in">
+      {/* Header Section */}
+      <PageHeader
+        tag="All Job Postings"
+        title={<span className="bg-gradient-to-r from-[#FF512F] to-[#FF7A00] bg-clip-text text-transparent">MY JOBS</span>}
+        actions={
+          user?.role !== 'interviewer' ? (
+            <Link
+              to={getPostNewJobHref(basePath)}
+              state={POST_JOB_NEW_INTENT}
+              className="w-fit bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all transform hover:scale-[1.02] cursor-pointer shadow-md hover:shadow-lg touch-manipulation"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Post Job</span>
+            </Link>
+          ) : undefined
+        }
+      />
 
-export interface WindowRequestUser {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-}
+      <JobsSearchFilters
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
+        employmentTypeFilter={employmentTypeFilter}
+        onEmploymentTypeFilterChange={handleEmploymentTypeFilterChange}
+        isLoading={isLoading}
+        hasActiveFilters={hasActiveFilters}
+        totalJobs={pagination.total}
+        loadedJobsCount={jobs.length}
+      />
 
-export interface WindowRequest {
-  id: string;
-  job_id: string;
-  window_id: string;
-  request_type: WindowRequestType;
-  extend_minutes?: number | null;
-  note?: string | null;
-  status: WindowRequestStatus;
-  requested_by?: string;
-  reviewed_by?: string | null;
-  reviewed_at?: string | null;
-  created_at: string;
-  updated_at?: string;
-  requester?: WindowRequestUser;
-  reviewer?: WindowRequestUser;
-}
+      <div className="space-y-4">
+        {showSkeleton ? (
+          <JobsSkeleton />
+        ) : jobs.length === 0 ? (
+          <div className="bg-white border border-gray-100 rounded-xl p-8 text-center space-y-3">
+            <p className="text-gray-500 font-medium">
+              {hasActiveFilters ? "No job postings match your filters." : "No job postings found."}
+            </p>
+            {!hasActiveFilters && (
+              <Link
+                to={getPostNewJobHref(basePath)}
+                state={POST_JOB_NEW_INTENT}
+                className="inline-flex items-center gap-2 text-xs font-bold text-[#FF512F] hover:underline"
+              >
+                Post your first job now &rarr;
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div
+            className={`space-y-4 transition-opacity duration-200 ${isRefreshing ? "opacity-50 pointer-events-none" : ""}`}
+            aria-busy={isRefreshing}
+          >
+            {jobs.map((job) => (
+              <JobsDashboardRow
+                key={job.id}
+                job={job}
+                basePath={basePath}
+                onCloseJob={handleCloseJob}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-export interface WindowClosingWarningPayload {
-  job_id: string;
-  window_id: string;
-  ends_at: string;
-  waiting_count: number;
-  minutes_remaining: number;
-  message: string;
-  at: string;
-}
-
-export interface WindowClosePromptPayload {
-  job_id: string;
-  window_id: string;
-  waiting_count: number;
-  active_interviews: number;
-  pending_close_decision: boolean;
-  has_future_window: boolean;
-  options: ("continue" | "release")[];
-  message: string;
-  at: string;
-}
-
-export interface WindowRequestCreatedPayload {
-  request: WindowRequest;
-  job_id: string;
-  at: string;
-}
-
-export interface WindowRequestReviewedPayload {
-  request: WindowRequest;
-  action: "approve" | "declined" | "decline";
-  job_id: string;
-  at: string;
+      {showPagination && !showSkeleton && (
+        <TablePagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
+  );
 }

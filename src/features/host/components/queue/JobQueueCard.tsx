@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClipboardList, PauseCircle, Clock, Bell, Send } from "lucide-react";
 import { Spinner } from "@/common/ui/Spinner";
 import { Job, JobApplicant, WindowRequest } from "@/types/job";
@@ -46,12 +47,14 @@ export function JobQueueCard({
     job: Job;
     onWindowExpired: () => void;
     onCreditUpdated: (balance: number) => void;
-    onSessionChange?: () => Promise<void> | void;
+    onSessionChange?: (closedJobId?: string) => Promise<void> | void;
     isAnyAdmitting: boolean;
     setIsAnyAdmitting: (val: boolean) => void;
 }) {
     const { user } = useAuth();
     const isAdmin = user?.role !== "interviewer";
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const [isAdmitting, setIsAdmitting] = useState(false);
     const [localApplicants, setLocalApplicants] = useState<JobApplicant[] | undefined>(
@@ -142,10 +145,15 @@ export function JobQueueCard({
 
     // Check if close decision prompt is required
     useEffect(() => {
-        if (job.pendingCloseDecision || activeWindow?.pendingCloseDecision) {
+        const stateWindowId = location.state?.triggerCloseEarly;
+        const currentWindowId = activeWindow?.id || job.queueWindows?.[0]?.id;
+        if (stateWindowId && stateWindowId === currentWindowId) {
+            setCloseDecisionModalOpen(true);
+            navigate(location.pathname, { replace: true, state: {} });
+        } else if (job.pendingCloseDecision || activeWindow?.pendingCloseDecision) {
             setCloseDecisionModalOpen(true);
         }
-    }, [job.pendingCloseDecision, activeWindow?.pendingCloseDecision]);
+    }, [job.pendingCloseDecision, activeWindow?.pendingCloseDecision, location.state, activeWindow?.id, job.queueWindows, location.pathname, navigate]);
 
     // Fetch pending requests for admins
     const fetchPendingRequests = useCallback(async () => {
@@ -196,14 +204,16 @@ export function JobQueueCard({
 
     // Check 15-minute countdown locally
     const minutesRemaining = useMemo(() => {
-        if (warningPayload) return warningPayload.minutes_remaining;
         if (!activeWindow?.endTime) return null;
+        const status = normalizeWindowStatus(activeWindow.status);
+        if (status === "wrapping_up" || status === "Closed") return null;
+        if (warningPayload) return warningPayload.minutes_remaining;
         const msLeft = new Date(activeWindow.endTime).getTime() - now;
         if (msLeft > 0 && msLeft <= 15 * 60 * 1000) {
             return Math.ceil(msLeft / (60 * 1000));
         }
         return null;
-    }, [warningPayload, activeWindow?.endTime, now]);
+    }, [warningPayload, activeWindow?.endTime, activeWindow?.status, now]);
 
     const [isWindowActionLoading, setIsWindowActionLoading] = useState(false);
 
@@ -225,22 +235,8 @@ export function JobQueueCard({
     };
 
     // Admin close early handler
-    const handleAdminCloseEarlyWindow = async () => {
-        const targetWindowId = activeWindow?.id || job.queueWindows?.[0]?.id;
-        if (!targetWindowId) return;
-        setIsWindowActionLoading(true);
-        try {
-            const res = await jobsApi.closeWindowEarly(job.id, targetWindowId);
-            toast.success(res.data.message || "Window closed early to new applicants.");
-            if (res.data.pending_close_decision) {
-                setCloseDecisionModalOpen(true);
-            }
-            onSessionChange?.();
-        } catch (err: any) {
-            toast.error(err?.response?.data?.data || "Failed to close window early.");
-        } finally {
-            setIsWindowActionLoading(false);
-        }
+    const handleAdminCloseEarlyWindow = () => {
+        setCloseDecisionModalOpen(true);
     };
 
     // Confirm Close Decision (Continue vs Release)
@@ -249,12 +245,34 @@ export function JobQueueCard({
         if (!targetWindowId) return;
         setIsSubmittingDecision(true);
         try {
+            let earlyRes: any = null;
+            try {
+                earlyRes = await jobsApi.closeWindowEarly(job.id, targetWindowId);
+            } catch {
+                // Ignore if already marked close early or wrapping up
+            }
+
+            // If closeWindowEarly already closed the window (pending_close_decision is false or 0 waiting candidates)
+            if (earlyRes?.data?.pending_close_decision === false || waitingCount === 0) {
+                toast.success(earlyRes?.data?.message || "Window closed early.");
+                setCloseDecisionModalOpen(false);
+                await onSessionChange?.(job.id);
+                return;
+            }
+
             const res = await jobsApi.closeWindowDecision(job.id, targetWindowId, decision);
             toast.success(res.data.message || "Close decision recorded.");
             setCloseDecisionModalOpen(false);
-            onSessionChange?.();
+            await onSessionChange?.(job.id);
         } catch (err: any) {
-            toast.error(err?.response?.data?.data || "Failed to submit close decision.");
+            const errorMsg = err?.response?.data?.data || err?.response?.data?.message;
+            if (typeof errorMsg === "string" && errorMsg.includes("No pending close decision")) {
+                toast.success("Window closed early.");
+                setCloseDecisionModalOpen(false);
+                await onSessionChange?.(job.id);
+            } else {
+                toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to submit close decision.");
+            }
         } finally {
             setIsSubmittingDecision(false);
         }
@@ -526,6 +544,7 @@ export function JobQueueCard({
                 waitingCount={waitingCount}
                 activeInterviews={sessionStatus === "in_session" ? 1 : 0}
                 isSubmitting={isSubmittingDecision}
+                isCloseEarly={!(activeWindow?.status === "wrapping_up" || job.queueStatus === "wrapping_up")}
                 onClose={() => setCloseDecisionModalOpen(false)}
                 onConfirmDecision={handleConfirmCloseDecision}
             />

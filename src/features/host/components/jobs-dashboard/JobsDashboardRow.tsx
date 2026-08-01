@@ -1,343 +1,157 @@
-import { createPortal } from "react-dom";
-import { useState, useEffect } from "react";
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  Clock,
-  Star,
-  FileText,
-  CheckCircle,
-  HelpCircle,
-} from "lucide-react";
-import { useBodyScrollLock } from "@/common/hooks/useBodyScrollLock";
-import { JobApplicant } from "@/types/job";
-import { Spinner } from "@/common/ui/Spinner";
-import { jobsApi } from "@/api/jobsApi";
+import { Link } from "react-router-dom";
+import { MapPin, Briefcase, DollarSign, Edit, Archive } from "lucide-react";
+import { Job } from "@/types/job";
+import { getJobDetailHref, isDraftJob } from "@/features/host/utils/postJobWizardStorage";
 
-interface ApplicantDetailsModalProps {
-  jobId?: string;
-  applicant: JobApplicant | null;
-  isOpen: boolean;
-  onClose: () => void;
-  isHistorical?: boolean;
+interface JobsDashboardRowProps {
+  job: Job;
+  basePath: string;
+  onCloseJob: (id: string) => void;
 }
 
-export function ApplicantDetailsModal({
-  jobId,
-  applicant,
-  isOpen,
-  onClose,
-  isHistorical = false,
-}: ApplicantDetailsModalProps) {
-  useBodyScrollLock(isOpen);
+const formatSalary = (value: number) => {
+  if (value >= 1000) {
+    return (value / 1000).toFixed(0) + "k";
+  }
+  return value.toString();
+};
 
-  const [detailedApplicant, setDetailedApplicant] = useState<JobApplicant | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [editedNotes, setEditedNotes] = useState<string>("");
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
+const isClosedJob = (status: string) => status.toLowerCase() === "closed";
 
-  useEffect(() => {
-    if (!isOpen || !applicant) {
-      setDetailedApplicant(null);
-      setEditedNotes("");
-      return;
-    }
+const getJobInitials = (title: string) => {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return title.trim().slice(0, 2).toUpperCase() || "?";
+};
 
-    setDetailedApplicant(applicant);
-    setEditedNotes(applicant.internalNotes || "");
+export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRowProps) {
+  const jobHref = getJobDetailHref(basePath, job);
+  const editHref = isDraftJob(job.status) ? jobHref : `${basePath}/jobs/${job.id}/edit`;
 
-    if (!jobId) return;
-
-    setIsLoading(true);
-    let active = true;
-
-    jobsApi
-      .getParticipantDetails(jobId, applicant.participant.id)
-      .then((res) => {
-        if (active && res.data) {
-          setDetailedApplicant(res.data);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch participant details:", err);
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [isOpen, applicant?.participant?.id, jobId]);
-
-  if (!isOpen || !applicant) return null;
-
-  const currentApplicant = detailedApplicant || applicant;
-
-  const handleSaveNotes = async () => {
-    if (!jobId || !currentApplicant.queueEntryId) return;
-    setIsSavingNotes(true);
-    try {
-      // Milestone 3 API call
-      const res = await jobsApi.updateApplicantNotes(jobId, currentApplicant.queueEntryId, editedNotes);
-      setDetailedApplicant(res.data);
-      // Optional: show toast here
-    } catch (err) {
-      console.error("Failed to update notes", err);
-    } finally {
-      setIsSavingNotes(false);
-    }
-  };
-
-  const formatDuration = (seconds: number | null) => {
-    if (seconds === null || seconds === undefined) return "N/A";
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
-  };
-
-  const getStatusBadgeClass = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "declined" || s === "removed") {
-      return "bg-red-50 text-red-700 border-red-200";
-    }
-    if (s === "admitted" || s === "confirmed" || s === "hired") {
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    }
-    if (s === "waiting" || s === "called" || s === "in_session" || s === "follow_up" || s === "pending_outcome") {
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    }
-    return "bg-gray-50 text-gray-700 border-gray-200";
-  };
-
-  const getOutcomeLabel = (outcome: string | null) => {
-    if (!outcome) return "N/A";
-    const o = outcome.toLowerCase();
-    if (o === "hired") return "Hired";
-    if (o === "follow_up") return "Follow Up";
-    if (o === "not_a_fit") return "Not a Fit";
-    return outcome;
-  };
-
-  const getOutcomeBadgeClass = (outcome: string | null) => {
-    if (!outcome) return "bg-gray-50 text-gray-700 border-gray-200";
-    const o = outcome.toLowerCase();
-    if (o === "not_a_fit") {
-      return "bg-red-50 text-red-700 border-red-200";
-    }
-    if (o === "hired") {
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    }
-    if (o === "follow_up") {
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    }
-    return "bg-gray-50 text-gray-700 border-gray-200";
-  };
-
-  const renderStars = (rating: number | null) => {
-    if (rating === null || rating === undefined) return <span className="text-gray-400 font-medium text-xs">No rating</span>;
-    return (
-      <div className="flex items-center gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${star <= rating ? "fill-amber-400 text-amber-400" : "text-gray-200"
-              }`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  const name = `${currentApplicant.participant.firstName || ""} ${currentApplicant.participant.lastName || ""}`.trim() || "Unknown Candidate";
-  const initials = ((currentApplicant.participant.firstName?.[0] || "") + (currentApplicant.participant.lastName?.[0] || "")).toUpperCase() || "?";
-
-  return createPortal(
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[9999] animate-fade-in p-0 sm:p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FF512F] to-[#FF7A00] rounded-full flex-shrink-0 flex items-center justify-center font-bold text-white text-sm">
-              {initials}
-            </div>
-            <div className="min-w-0 flex items-center gap-2">
-              <h2 className="text-base font-bold text-gray-900 truncate">{name}</h2>
-              {isLoading && <Spinner className="w-3.5 h-3.5 text-gray-400 animate-spin shrink-0" />}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-3 md:p-4 shadow-sm hover:border-gray-200 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4 group overflow-hidden">
+      {/* Job Info */}
+      <Link
+        to={jobHref}
+        className="flex items-start gap-3 md:gap-4 flex-1 min-w-0 cursor-pointer"
+      >
+        <div className="w-10 h-10 md:w-11 md:h-11 bg-gray-50 rounded-lg flex items-center justify-center text-[#FF512F] font-bold text-sm md:text-base shrink-0 group-hover:bg-[#FFF5F2] transition-colors">
+          {getJobInitials(job.title)}
         </div>
-
-        {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-brand [scrollbar-gutter:stable]">
-
-          {/* Basic Details & Participant Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5" />
-                Participant Profile
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-start text-xs gap-4">
-                  <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                    <Mail className="w-3 h-3 text-gray-400" />
-                    Email:
-                  </span>
-                  <a href={`mailto:${currentApplicant.participant.email}`} className="text-[#FF512F] hover:underline font-bold break-all text-right">
-                    {currentApplicant.participant.email}
-                  </a>
-                </div>
-                <div className="flex justify-between items-start text-xs gap-4">
-                  <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-gray-400" />
-                    Phone:
-                  </span>
-                  <span className="text-gray-700 font-bold break-all text-right">
-                    {currentApplicant.participant.phone || "-"}
-                  </span>
-                </div>
-              </div>
+        <div className="space-y-1 min-w-0 flex-1">
+          <h3
+            className="text-base md:text-lg font-bold text-gray-900 truncate group-hover:text-[#FF512F] transition-colors"
+            title={job.title}
+          >
+            {job.title}
+          </h3>
+          <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500 font-medium min-w-0">
+            <div className="flex items-center gap-1 min-w-0">
+              <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <span className="truncate max-w-[160px] sm:max-w-[240px]" title={job.location}>
+                {job.location}
+              </span>
             </div>
-
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5" />
-                Queue & Interview Status
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 font-medium">Queue Status:</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeClass(currentApplicant.status)}`}>
-                    {currentApplicant.status}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 font-medium">Interview Outcome:</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getOutcomeBadgeClass(currentApplicant.outcome)}`}>
-                    {getOutcomeLabel(currentApplicant.outcome)}
-                  </span>
-                </div>
-                {currentApplicant.interviewedBy && (
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-400 font-medium">Interviewer:</span>
-                    <span className="text-gray-700 font-bold">
-                      {`${currentApplicant.interviewedBy.firstName || ""} ${currentApplicant.interviewedBy.lastName || ""}`.trim()}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 font-medium">Rating:</span>
-                  {renderStars(currentApplicant.rating)}
-                </div>
-              </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <span>{job.type}</span>
             </div>
-          </div>
-
-          {/* Timeline & Schedule */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              Event Timeline
-            </h3>
-            <div className="text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-medium">Duration:</span>
-                <span className="text-gray-700 font-bold">{formatDuration(currentApplicant.sessionDurationSeconds)}</span>
+            {(job.salaryMin > 0 || job.salaryMax > 0) && (
+              <div className="flex items-center gap-1 shrink-0">
+                <DollarSign className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <span>
+                  ${formatSalary(job.salaryMin)} - ${formatSalary(job.salaryMax)}
+                </span>
               </div>
-            </div>
-          </div>
-
-          {/* Internal Notes */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              Internal Notes
-            </h3>
-            {isHistorical ? (
-              <div className="space-y-2">
-                <textarea
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  disabled={isSavingNotes}
-                  className="w-full text-xs text-gray-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-gray-200 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#FF512F]/30 focus:border-[#FF512F] resize-y"
-                  placeholder="Add notes for this historical candidate..."
-                />
-                {editedNotes !== (currentApplicant.internalNotes || "") && (
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleSaveNotes}
-                      disabled={isSavingNotes}
-                      className="px-3 py-1.5 text-xs font-bold text-white bg-[#FF512F] hover:bg-[#E04020] rounded-md transition-colors disabled:opacity-50"
-                    >
-                      {isSavingNotes ? "Saving..." : "Save Notes"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-gray-150 min-h-[60px] whitespace-pre-wrap break-words">
-                {currentApplicant.internalNotes || "No notes captured for this candidate yet."}
-              </p>
             )}
           </div>
+        </div>
+      </Link>
 
-          {/* Screening Questions Answers if any */}
-          {currentApplicant.screeningAnswers && currentApplicant.screeningAnswers.length > 0 && (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3 animate-fade-in">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                <HelpCircle className="w-3.5 h-3.5" />
-                Screening Answers
-              </h3>
-              <div className="space-y-3">
-                {currentApplicant.screeningAnswers.map((ans, idx) => (
-                  <div key={ans.questionId || idx} className="bg-white p-3 rounded-lg border border-gray-150 text-xs break-words">
-                    <div className="grid grid-cols-[1.25rem_1fr] gap-x-2 gap-y-2 items-baseline">
-                      <span className="font-medium text-gray-500 leading-snug">Q:</span>
-                      <p className="m-0 font-normal text-gray-800 leading-snug break-words min-w-0">
-                        {ans.question}
-                      </p>
-                      <span className="font-medium text-gray-500 leading-snug">A:</span>
-                      <span className="font-normal text-gray-800 leading-snug break-words min-w-0">
-                        {ans.selectedOptionText}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Stats, Badge & Actions */}
+      <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto border-t border-gray-50 pt-4 mt-2 md:border-t-0 md:pt-0 md:mt-0">
+        <div className="flex items-center justify-around md:justify-end gap-4 md:gap-8">
+          <div className="text-center w-auto md:w-16">
+            <div className="text-lg md:text-xl font-bold text-gray-900">{job.queueCount || 0}</div>
+            <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">Queue</div>
+          </div>
+          <div className="text-center w-auto md:w-16">
+            <div className="text-lg md:text-xl font-bold text-gray-900">{job.totalCount || 0}</div>
+            <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">Total</div>
+          </div>
+          <div className="w-auto md:w-24 flex items-center justify-center shrink-0">
+            <div
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${(() => {
+                const s = job.status?.toLowerCase() ?? "";
+                if (s === "active") return "bg-green-50 text-green-600 border border-green-100";
+                if (s === "paused") return "bg-yellow-50 text-yellow-600 border border-yellow-100";
+                if (s === "draft") return "bg-blue-50 text-blue-600 border border-blue-100";
+                if (s === "closed") return "bg-red-50 text-red-600 border border-red-100";
+                return "bg-gray-50 text-gray-600 border border-gray-100";
+              })()}`}
+            >
+              {job.status}
+            </div>
+          </div>
+          {!isClosedJob(job.status) && basePath !== "/interviewer" ? (
+            <div className="hidden md:flex items-center justify-end gap-2 shrink-0 md:w-24">
+              <Link
+                to={editHref}
+                state={isDraftJob(job.status) ? undefined : { from: "list" }}
+                className="h-10 w-10 flex items-center justify-center border border-gray-100 hover:border-gray-200 hover:bg-gray-50 rounded-lg text-gray-500 hover:text-gray-900 transition-all cursor-pointer touch-manipulation"
+                title={isDraftJob(job.status) ? "Continue draft" : "Edit Job"}
+              >
+                <Edit className="w-4 h-4" />
+              </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onCloseJob(job.id);
+                }}
+                className="h-10 w-10 flex items-center justify-center border border-gray-100 hover:border-red-200 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-600 transition-all cursor-pointer touch-manipulation"
+                title="Close Job"
+              >
+                <Archive className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center justify-end shrink-0 md:w-24">
+              <span className="text-xs text-gray-400 font-bold px-2 py-1 select-none">
+                Read Only
+              </span>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] rounded-lg transition-all shadow-md cursor-pointer"
-          >
-            Close
-          </button>
-        </div>
+        {!isClosedJob(job.status) && basePath !== "/interviewer" && (
+          <div className="flex md:hidden items-center justify-center gap-4">
+            <Link
+              to={editHref}
+              state={isDraftJob(job.status) ? undefined : { from: "list" }}
+              className="h-11 min-w-[88px] px-4 flex items-center justify-center gap-2 border border-gray-100 hover:border-gray-200 hover:bg-gray-50 rounded-lg text-gray-600 hover:text-gray-900 text-sm font-bold transition-all cursor-pointer touch-manipulation"
+              title={isDraftJob(job.status) ? "Continue draft" : "Edit Job"}
+            >
+              <Edit className="w-4 h-4 shrink-0" />
+              Edit
+            </Link>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onCloseJob(job.id);
+              }}
+              className="h-11 min-w-[88px] px-4 flex items-center justify-center gap-2 border border-red-100 hover:border-red-200 hover:bg-red-50 rounded-lg text-red-600 text-sm font-bold transition-all cursor-pointer touch-manipulation"
+              title="Close Job"
+            >
+              <Archive className="w-4 h-4 shrink-0" />
+              Close
+            </button>
+          </div>
+        )}
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }
