@@ -44,9 +44,10 @@ export function ScheduledWindowCountdown({ startsAt, getServerNowMs }: Scheduled
   const label = getWindowCountdownLabel(startsAt, getServerNowMs());
 
   return (
-    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3.5 py-2 rounded-lg border border-amber-500/20 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-      <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span>
-      {label}
+    <span className="relative overflow-hidden text-xs font-bold text-amber-400 bg-amber-500/10 px-3.5 py-2 rounded-lg border border-amber-500/20 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/25 to-transparent -translate-x-full animate-shimmer-sweep pointer-events-none" />
+      <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0 relative z-10" />
+      <span className="relative z-10">{label}</span>
     </span>
   );
 }

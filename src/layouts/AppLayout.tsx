@@ -8,6 +8,10 @@ import { displayNameFromUser } from "@/common/utils/userDisplayName";
 import { normalizeRole, ROLES } from "@/common/utils/permissions";
 import { useCompanyRealtime } from "@/hooks/useCompanyRealtime";
 import AppHeader from "@/common/components/AppHeader";
+import { useGlobalWindowWarning } from "@/hooks/useGlobalWindowWarning";
+import { WindowClosingWarningBanner } from "@/features/host/components/queue/WindowClosingWarningBanner";
+import { jobsApi } from "@/api/jobsApi";
+import { toast } from "sonner";
 
 export default function AppLayout() {
   const { logout, user } = useAuth();
@@ -15,6 +19,32 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const { warning, refresh: refreshWarning } = useGlobalWindowWarning();
+  const isAdmin = user?.role !== "interviewer";
+  const [isWindowActionLoading, setIsWindowActionLoading] = useState(false);
+
+  const handleGlobalExtend = async (minutes: number) => {
+    if (!warning || !warning.job.id || !warning.window.id) return;
+    setIsWindowActionLoading(true);
+    try {
+      await jobsApi.extendWindow(warning.job.id, warning.window.id, minutes);
+      toast.success(`Window extended by ${minutes} minutes.`);
+      refreshWarning();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.data || "Failed to extend window.");
+    } finally {
+      setIsWindowActionLoading(false);
+    }
+  };
+
+  const handleGlobalCloseEarly = async () => {
+    if (!warning || !warning.job.id || !warning.window.id) return;
+    navigate(`/${isAdmin ? "admin" : "interviewer"}/queue/${warning.job.id}`, {
+      state: { triggerCloseEarly: warning.window.id }
+    });
+  };
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<{ path: string; state?: any } | null>(null);
@@ -101,7 +131,23 @@ export default function AppLayout() {
           onLogout={handleLogout}
         />
 
+        {warning && !location.pathname.includes('/queue') && (
+          <WindowClosingWarningBanner
+            layout="bar"
+            jobTitle={warning.job.title}
+            minutesRemaining={warning.minutesRemaining}
+            waitingCount={warning.waitingCount}
+            isAdmin={isAdmin}
+            isActionLoading={isWindowActionLoading}
+            onExtend={handleGlobalExtend}
+            onCloseEarly={handleGlobalCloseEarly}
+            onRequestExtension={() => navigate(`/${isAdmin ? 'admin' : 'interviewer'}/queue`)}
+            onRequestEarlyClose={() => navigate(`/${isAdmin ? 'admin' : 'interviewer'}/queue`)}
+          />
+        )}
+
         <div className="flex-1 min-w-0 max-w-full p-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
+
           <style>{`
             @keyframes pageFadeIn {
               from { opacity: 0.4; }

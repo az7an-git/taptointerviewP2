@@ -10,9 +10,10 @@ import { useAuth } from "@/context/AuthContext";
 import { JobQueueCard, QueueSkeleton } from "../components";
 import { JobRealtimeBridge } from "../components/queue/JobRealtimeBridge";
 import { blocksAdmitNext, hasActiveSessionFlow } from "../utils/queueEntryStatus";
+import { normalizeWindowStatus } from "../utils/queueWindowLive";
 import { useCompanyQueueRealtime } from "@/hooks/useCompanyQueueRealtime";
 
-const EXPIRE_RETRY_MS = 30_000;
+const EXPIRE_RETRY_MS = 5000;
 const EXPIRE_RETRY_MAX = 8;
 
 let globalQueueCache: Job[] | null = null;
@@ -53,6 +54,17 @@ export default function MyQueuePage() {
             setIsLoading(false);
         }
     }, []);
+
+    const handleSessionChange = useCallback(async (closedJobId?: string) => {
+        if (closedJobId) {
+            setJobs((prev) => {
+                const next = prev.filter((j) => j.id !== closedJobId);
+                globalQueueCache = next;
+                return next;
+            });
+        }
+        await fetchJobs();
+    }, [fetchJobs]);
 
     const refreshAfterWindowExpired = useCallback(() => {
         if (expireRetryRef.current) {
@@ -129,9 +141,30 @@ export default function MyQueuePage() {
         );
     }
 
-    const queueJobs = jobs.filter(
-        (job) => job.status === "Active" && job.applicants && job.applicants.length > 0
-    ).filter((job) => jobId ? job.id === jobId : true);
+    const queueJobs = jobs.filter((job) => {
+        if (job.status !== "Active") return false;
+
+        const hasWaitingCandidates = job.applicants && job.applicants.length > 0;
+        if (hasWaitingCandidates) return true;
+
+        // If explicitly requested via URL (e.g. redirected when clicking Close Early from banner)
+        const matchesJobId = jobId ? job.id === jobId : false;
+        if (matchesJobId) return true;
+
+        // Only show 0-candidate jobs if the window closing warning banner is active (<= 15m remaining on an Open window) or pending close decision
+        const now = Date.now();
+        const isClosingSoonOrPending = job.pendingCloseDecision || job.queueWindows?.some((w) => {
+            const status = normalizeWindowStatus(w.status);
+            if (w.pendingCloseDecision) return true;
+            if (status === "Open" && w.endTime) {
+                const msLeft = new Date(w.endTime).getTime() - now;
+                return msLeft > 0 && msLeft <= 15 * 60 * 1000;
+            }
+            return false;
+        });
+
+        return Boolean(isClosingSoonOrPending);
+    });
 
     return (
         <div className="min-w-0 w-full max-w-full px-0 sm:px-0 space-y-4 sm:space-y-6 pb-16 sm:pb-20">
@@ -156,7 +189,7 @@ export default function MyQueuePage() {
                         job={job}
                         onWindowExpired={refreshAfterWindowExpired}
                         onCreditUpdated={setCompanyBalance}
-                        onSessionChange={fetchJobs}
+                        onSessionChange={handleSessionChange}
                         isAnyAdmitting={isAnyAdmitting}
                         setIsAnyAdmitting={setIsAnyAdmitting}
                     />
