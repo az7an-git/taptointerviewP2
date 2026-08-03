@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { StepLoadingState } from "@/common/ui/StepLoadingState";
-import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/common/ui/PageHeader";
 import { JobForm } from "../components";
@@ -88,14 +88,14 @@ export default function EditJobPage() {
             closedRedirectHandled.current = true;
             toast.error("Closed jobs are archived and cannot be edited.");
           }
-          navigate(`${basePath}/jobs`);
+          navigate(`${basePath}/jobs`, { replace: true });
           return;
         }
         setJob(fetchedJob);
       } catch (error) {
         console.error("Failed to fetch job for editing:", error);
         toast.error("Job not found or failed to load");
-        navigate(`${basePath}/jobs`);
+        navigate(`${basePath}/jobs`, { replace: true });
       } finally {
         setIsLoading(false);
       }
@@ -110,9 +110,9 @@ export default function EditJobPage() {
       await jobsApi.updateJob(id!, data);
       toast.success("Job updated successfully");
       if (fromSource === "list") {
-        navigate(`${basePath}/jobs`);
+        navigate(`${basePath}/jobs`, { replace: true });
       } else {
-        navigate(`${basePath}/jobs/${id}`);
+        navigate(`${basePath}/jobs/${id}`, { replace: true });
       }
     } catch (error: any) {
       console.error("Failed to update job via API:", error);
@@ -138,12 +138,19 @@ export default function EditJobPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3 min-w-0">
-        <Link
-          to={fromSource === "list" ? `${basePath}/jobs` : `${basePath}/jobs/${id}`}
-          className="shrink-0 p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors group touch-manipulation mt-1 md:mt-2"
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate(fromSource === "list" ? `${basePath}/jobs` : `${basePath}/jobs/${id}`, { replace: true });
+            }
+          }}
+          className="shrink-0 p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors group touch-manipulation mt-1 md:mt-2 cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-[#FF512F]" />
-        </Link>
+        </button>
         <div className="flex-1 min-w-0">
           <PageHeader
             tag="Edit Job Posting"
