@@ -49,7 +49,7 @@ export function getDefaultFutureWindowTimes(now: Date = new Date()) {
 export function isFutureQueueWindow(window: QueueWindow, now: Date = new Date()): boolean {
   // Actively-running windows are always valid regardless of start time
   const status = window.status?.toLowerCase();
-  if (status === "open" || status === "paused") return true;
+  if (status === "open" || status === "paused" || status === "wrapping_up") return true;
 
   const startMs = windowIsoToMs(window.startTime);
   const endMs = windowIsoToMs(window.endTime);
@@ -62,6 +62,8 @@ export function isFutureQueueWindow(window: QueueWindow, now: Date = new Date())
 
 /** True once the window's end time has passed (for display, not publish checks). */
 export function hasQueueWindowEnded(window: QueueWindow, now: Date = new Date()): boolean {
+  const status = window.status?.toLowerCase();
+  if (status === "wrapping_up") return false;
   const endMs = windowIsoToMs(window.endTime);
   return !Number.isNaN(endMs) && endMs <= now.getTime();
 }

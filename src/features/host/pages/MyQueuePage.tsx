@@ -31,20 +31,11 @@ export default function MyQueuePage() {
             const response = await jobsApi.getActiveQueues();
             const activeQueues = response.data;
 
-            // Populate full queueWindows by fetching individual job details
-            const jobsWithWindows = await Promise.all(
-                activeQueues.map(async (q) => {
-                    try {
-                        const detailRes = await jobsApi.getJob(q.id);
-                        return {
-                            ...q,
-                            queueWindows: detailRes.data.queueWindows || [],
-                        };
-                    } catch (e) {
-                        return q;
-                    }
-                })
-            );
+            // If any active queue item has missing windows, populate as fallback
+            const jobsWithWindows = activeQueues.map((q) => ({
+                ...q,
+                queueWindows: q.queueWindows || [],
+            }));
 
             setJobs(jobsWithWindows);
             globalQueueCache = jobsWithWindows;
