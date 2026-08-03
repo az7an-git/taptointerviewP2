@@ -6,8 +6,6 @@ import PageHeader from "@/common/ui/PageHeader";
 import { ScreeningQuestionsManager } from "../components/screening-questions";
 import { QueueWindowScheduler } from "../components/queue-window-scheduler";
 import { JobDetailSkeleton, LiveQueueCard, JobSummaryCard, JobInterviewersManager } from "../components";
-import { JobFunnelMetrics } from "../components/job-details/JobFunnelMetrics";
-import { PastApplicantsPanel } from "../components/queue/PastApplicantsPanel";
 import { Job, QueueWindow, ScreeningQuestion } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
 import { toast } from "sonner";
@@ -15,9 +13,6 @@ import { isDraftJob } from "../utils/postJobWizardStorage";
 import { getLiveQueueState, isActiveJobStatus } from "../utils/queueWindowLive";
 import { blocksAdmitNext, hasActiveSessionFlow } from "../utils/queueEntryStatus";
 import { useJobRealtime } from "@/hooks/useJobRealtime";
-
-// Feature flag for Milestone 3 development
-const ENABLE_M3 = false;
 
 
 export default function JobDetailPage() {
@@ -131,13 +126,6 @@ export default function JobDetailPage() {
       let response;
       if (newStatus === "Closed") {
         response = await jobsApi.closeJob(id!);
-      } else if (newStatus === "Active" && job.status === "Closed") {
-        // Handle Reopen if M3 is enabled
-        if (ENABLE_M3) {
-          response = await jobsApi.reopenJob(id!);
-        } else {
-          response = await jobsApi.updateJob(id!, { status: newStatus });
-        }
       } else {
         response = await jobsApi.updateJob(id!, { status: newStatus });
       }
@@ -170,7 +158,13 @@ export default function JobDetailPage() {
     <div className="space-y-6">
       <div className="flex items-start gap-3 min-w-0">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate(`${basePath}/jobs`, { replace: true });
+            }
+          }}
           className="shrink-0 p-2 md:-ml-2 hover:bg-gray-100 rounded-full transition-colors group touch-manipulation mt-1 md:mt-2 cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-[#FF512F]" />
@@ -182,7 +176,7 @@ export default function JobDetailPage() {
             title={job.title}
             truncateTitle
             actions={
-              job.status !== "Closed" && user?.role !== 'interviewer' ? (
+              job.status !== "Closed" && user?.role !== 'interviewer' && (
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Link
                     to={`${basePath}/jobs/${id}/edit`}
@@ -201,27 +195,13 @@ export default function JobDetailPage() {
                     Close Job
                   </button>
                 </div>
-              ) : ENABLE_M3 && job.status === "Closed" && user?.role !== 'interviewer' ? (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <button
-                    onClick={() => handleStatusChange("Active")}
-                    className="w-fit px-2 sm:px-3 py-1.5 border border-[#FF512F] bg-[#FF512F] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-[#E04020] transition-colors cursor-pointer touch-manipulation shadow-sm"
-                  >
-                    <Briefcase className="w-3.5 h-3.5 shrink-0" />
-                    Reopen Job
-                  </button>
-                </div>
-              ) : null
+              )
             }
           />
         </div>
       </div>
 
       <JobSummaryCard job={job} />
-
-      {ENABLE_M3 && (
-        <JobFunnelMetrics metrics={job.funnelMetrics} />
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div
@@ -261,16 +241,12 @@ export default function JobDetailPage() {
           jobId={id!}
           initialQuestions={job.screeningQuestions || []}
           persistToApi
-          showDragHandles={ENABLE_M3 ? true : false}
+          showDragHandles={false}
           onQuestionsChange={(questions: ScreeningQuestion[]) => setJob(prev => prev ? { ...prev, screeningQuestions: questions } : null)}
-          disabled={ENABLE_M3 ? job.status === "Closed" : !isDraftJob(job.status)}
-          showAddButton={ENABLE_M3 ? job.status !== "Closed" : false}
+          disabled={!isDraftJob(job.status)}
+          showAddButton={false}
         />
       </div>
-
-      {ENABLE_M3 && (
-        <PastApplicantsPanel jobId={id!} />
-      )}
 
       {user?.role !== 'interviewer' && (
         <JobInterviewersManager jobId={id!} />

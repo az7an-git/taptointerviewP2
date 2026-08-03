@@ -109,7 +109,22 @@ export default function QueueWindowScheduler({
     void fetchPendingRequests();
   }, [fetchPendingRequests]);
 
-  useJobRealtime(jobId && jobId !== "new" ? jobId : undefined, () => { }, {
+  const handleRealtimeUpdate = React.useCallback(async () => {
+    if (!jobId || jobId === "new") return;
+    try {
+      const res = await jobsApi.getJob(jobId);
+      if (res.data) {
+        onJobUpdated?.(res.data);
+        const updated = res.data.queueWindows || [];
+        setWindows(updated);
+        onWindowsChange?.(updated);
+      }
+    } catch {
+      // Ignore
+    }
+  }, [jobId, onJobUpdated, onWindowsChange]);
+
+  useJobRealtime(jobId && jobId !== "new" ? jobId : undefined, handleRealtimeUpdate, {
     onWindowRequestCreated: () => {
       if (isAdmin) {
         toast.info("New window request received from recruiter.");
@@ -140,9 +155,7 @@ export default function QueueWindowScheduler({
     }
   }, [initialWindows]);
 
-  // Client-side real-time status transitions — no API calls needed.
-  // Registers a timer for each window's start (Scheduled → Open) and end (Open/Paused → Closed).
-  // Capped at 30-min lookahead; timers are cleaned up on unmount or when windows change.
+  // Client-side real-time status transitions — fallback timer when windows expire
   const MAX_LOOKAHEAD_MS = 30 * 60 * 1000;
   React.useEffect(() => {
     const timerIds: ReturnType<typeof setTimeout>[] = [];
@@ -380,24 +393,23 @@ export default function QueueWindowScheduler({
     if (!jobId || !decisionWindowId) return;
     setIsSubmittingDecision(true);
     try {
-      let earlyRes: any = null;
-      try {
-        earlyRes = await jobsApi.closeWindowEarly(jobId, decisionWindowId);
-      } catch {
-        // Ignore if already marked close early or wrapping up
-      }
+      const targetWin = windows.find((w) => w.id === decisionWindowId);
+      const isAlreadyWrappingUp = targetWin?.status === "wrapping_up" || job?.queueStatus === "wrapping_up";
 
-      if (earlyRes?.data?.pending_close_decision === false || decisionData?.waitingCount === 0) {
-        toast.success(earlyRes?.data?.message || "Window closed early.");
-        setDecisionWindowId(null);
-        setDecisionData(null);
-        if (earlyRes?.data?.job) {
-          onJobUpdated?.(earlyRes.data.job);
-          const updated = earlyRes.data.job.queueWindows || [];
-          setWindows(updated);
-          onWindowsChange?.(updated);
+      if (!isAlreadyWrappingUp) {
+        const earlyRes = await jobsApi.closeWindowEarly(jobId, decisionWindowId);
+        if (earlyRes?.data?.pending_close_decision === false) {
+          toast.success(earlyRes?.data?.message || "Window closed early.");
+          setDecisionWindowId(null);
+          setDecisionData(null);
+          if (earlyRes?.data?.job) {
+            onJobUpdated?.(earlyRes.data.job);
+            const updated = earlyRes.data.job.queueWindows || [];
+            setWindows(updated);
+            onWindowsChange?.(updated);
+          }
+          return;
         }
-        return;
       }
 
       const res = await jobsApi.closeWindowDecision(jobId, decisionWindowId, decision);
@@ -411,14 +423,8 @@ export default function QueueWindowScheduler({
         onWindowsChange?.(updated);
       }
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.data || err?.response?.data?.message;
-      if (typeof errorMsg === "string" && errorMsg.includes("No pending close decision")) {
-        toast.success("Window closed early.");
-        setDecisionWindowId(null);
-        setDecisionData(null);
-      } else {
-        toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to submit close decision.");
-      }
+      const errorMsg = err?.response?.data?.data || err?.response?.data?.message || "Failed to submit close decision.";
+      toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to submit close decision.");
     } finally {
       setIsSubmittingDecision(false);
     }
