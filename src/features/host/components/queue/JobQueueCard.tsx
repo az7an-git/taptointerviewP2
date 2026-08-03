@@ -239,25 +239,21 @@ export function JobQueueCard({
         setCloseDecisionModalOpen(true);
     };
 
-    // Confirm Close Decision (Continue vs Release)
     const handleConfirmCloseDecision = async (decision: "continue" | "release") => {
         const targetWindowId = activeWindow?.id || job.queueWindows?.[0]?.id;
         if (!targetWindowId) return;
         setIsSubmittingDecision(true);
         try {
-            let earlyRes: any = null;
-            try {
-                earlyRes = await jobsApi.closeWindowEarly(job.id, targetWindowId);
-            } catch {
-                // Ignore if already marked close early or wrapping up
-            }
+            const isAlreadyWrappingUp = activeWindow?.status === "wrapping_up" || job.queueStatus === "wrapping_up";
 
-            // If closeWindowEarly already closed the window (pending_close_decision is false or 0 waiting candidates)
-            if (earlyRes?.data?.pending_close_decision === false || waitingCount === 0) {
-                toast.success(earlyRes?.data?.message || "Window closed early.");
-                setCloseDecisionModalOpen(false);
-                await onSessionChange?.(job.id);
-                return;
+            if (!isAlreadyWrappingUp) {
+                const earlyRes = await jobsApi.closeWindowEarly(job.id, targetWindowId);
+                if (earlyRes?.data?.pending_close_decision === false) {
+                    toast.success(earlyRes?.data?.message || "Window closed early.");
+                    setCloseDecisionModalOpen(false);
+                    await onSessionChange?.(job.id);
+                    return;
+                }
             }
 
             const res = await jobsApi.closeWindowDecision(job.id, targetWindowId, decision);
@@ -265,14 +261,8 @@ export function JobQueueCard({
             setCloseDecisionModalOpen(false);
             await onSessionChange?.(job.id);
         } catch (err: any) {
-            const errorMsg = err?.response?.data?.data || err?.response?.data?.message;
-            if (typeof errorMsg === "string" && errorMsg.includes("No pending close decision")) {
-                toast.success("Window closed early.");
-                setCloseDecisionModalOpen(false);
-                await onSessionChange?.(job.id);
-            } else {
-                toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to submit close decision.");
-            }
+            const errorMsg = err?.response?.data?.data || err?.response?.data?.message || "Failed to submit close decision.";
+            toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to submit close decision.");
         } finally {
             setIsSubmittingDecision(false);
         }
