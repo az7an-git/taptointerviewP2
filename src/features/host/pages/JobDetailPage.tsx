@@ -158,13 +158,7 @@ export default function JobDetailPage() {
     <div className="space-y-6">
       <div className="flex items-start gap-3 min-w-0">
         <button
-          onClick={() => {
-            if (window.history.state && window.history.state.idx > 0) {
-              navigate(-1);
-            } else {
-              navigate(`${basePath}/jobs`, { replace: true });
-            }
-          }}
+          onClick={() => navigate(-1)}
           className="shrink-0 p-2 md:-ml-2 hover:bg-gray-100 rounded-full transition-colors group touch-manipulation mt-1 md:mt-2 cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-[#FF512F]" />
