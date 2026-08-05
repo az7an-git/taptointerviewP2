@@ -755,49 +755,6 @@ export const jobsApi = {
     };
   },
 
-  // ==========================================
-  // Milestone 3: Placeholder Endpoints
-  // ==========================================
 
-  /**
-   * Reopen a closed job.
-   * POST /api/v1/jobs/:jobId/reopen
-   */
-  reopenJob: async (jobId: string) => {
-    const response = await authApi.post<{ status: string; data: any }>(`/jobs/${jobId}/reopen`);
-    return { data: mapToFrontend(response.data.data) };
-  },
 
-  /**
-   * Get historical applicants for a job.
-   * GET /api/v1/jobs/:jobId/past-applicants
-   */
-  getPastApplicants: async (jobId: string) => {
-    const response = await authApi.get<{ status: string; data: any[] }>(`/jobs/${jobId}/past-applicants`);
-    return { data: (response.data.data || []).map(mapApplicantFromBackend) };
-  },
-
-  /**
-   * Update internal notes for an applicant (useful for past applicants).
-   * PATCH /api/v1/jobs/:jobId/applicants/:applicantId/notes
-   */
-  updateApplicantNotes: async (jobId: string, applicantId: string, notes: string) => {
-    const response = await authApi.patch<{ status: string; data: any }>(
-      `/jobs/${jobId}/applicants/${applicantId}/notes`,
-      { internal_notes: notes }
-    );
-    return { data: mapApplicantFromBackend(response.data.data) };
-  },
-
-  /**
-   * Get funnel metrics for a job.
-   * GET /api/v1/jobs/:jobId/metrics
-   */
-  getJobMetrics: async (jobId: string) => {
-    const response = await authApi.get<{
-      status: string;
-      data: { views: number; qualified: number; disqualified: number };
-    }>(`/jobs/${jobId}/metrics`);
-    return { data: response.data.data };
-  },
 };
