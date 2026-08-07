@@ -18,6 +18,13 @@ import {
   ScreeningAnswer,
   WindowRequest,
   WindowRequestType,
+  PastApplicantsResponse,
+  PastApplicantDetail,
+  InterviewNote,
+  JobFunnelMetrics,
+  JobWithMetricsResponse,
+  LiveScreeningQuestionInput,
+  LiveScreeningQuestionResponse,
 } from "@/types/job";
 
 const mapScreeningOptionFromBackend = (opt: any): ScreeningQuestionOption => ({
@@ -755,6 +762,128 @@ export const jobsApi = {
     };
   },
 
+  /* ==========================================================================
+     Milestone 3 API Endpoints
+     ========================================================================== */
 
+  /**
+   * 3) Past Applicants list
+   * GET /jobs/:jobId/past-applicants
+   */
+  getPastApplicants: async (jobId: string, params?: { page?: number; limit?: number }) => {
+    const response = await authApi.get<{ status: string; data: PastApplicantsResponse }>(
+      `/jobs/${jobId}/past-applicants`,
+      { params }
+    );
+    return response.data;
+  },
 
+  /**
+   * 4) Past Applicant detail (includes versioned answers + notes)
+   * GET /jobs/:jobId/past-applicants/:queueEntryId
+   */
+  getPastApplicantDetail: async (jobId: string, queueEntryId: string) => {
+    const response = await authApi.get<{ status: string; data: PastApplicantDetail }>(
+      `/jobs/${jobId}/past-applicants/${queueEntryId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * 5) Add interview note
+   * POST /jobs/:jobId/queue/:queueEntryId/notes
+   */
+  addInterviewNote: async (jobId: string, queueEntryId: string, content: string) => {
+    const response = await authApi.post<{ status: string; data: InterviewNote }>(
+      `/jobs/${jobId}/queue/${queueEntryId}/notes`,
+      { content }
+    );
+    return response.data;
+  },
+
+  /**
+   * 6) Edit interview note
+   * PUT /jobs/:jobId/notes/:noteId
+   */
+  editInterviewNote: async (jobId: string, noteId: string, content: string) => {
+    const response = await authApi.put<{ status: string; data: InterviewNote }>(
+      `/jobs/${jobId}/notes/${noteId}`,
+      { content }
+    );
+    return response.data;
+  },
+
+  /**
+   * 7) Job funnel metrics
+   * GET /jobs/:jobId/metrics
+   */
+  getJobMetrics: async (jobId: string) => {
+    const response = await authApi.get<{ status: string; data: JobFunnelMetrics }>(
+      `/jobs/${jobId}/metrics`
+    );
+    return response.data;
+  },
+
+  /**
+   * 8) Job detail + metrics
+   * GET /jobs/:jobId/with-metrics
+   */
+  getJobWithMetrics: async (jobId: string) => {
+    const response = await authApi.get<{ status: string; data: JobWithMetricsResponse }>(
+      `/jobs/${jobId}/with-metrics`
+    );
+    return response.data;
+  },
+
+  /**
+   * 9) Live add screening question (admin)
+   * POST /jobs/:jobId/screening-questions/live
+   */
+  addLiveScreeningQuestion: async (jobId: string, question: LiveScreeningQuestionInput) => {
+    const response = await authApi.post<{ status: string; data: LiveScreeningQuestionResponse }>(
+      `/jobs/${jobId}/screening-questions/live`,
+      question
+    );
+    return response.data;
+  },
+
+  /**
+   * 10) Live edit screening question (admin)
+   * PUT /jobs/:jobId/screening-questions/:questionId
+   */
+  editLiveScreeningQuestion: async (
+    jobId: string,
+    questionId: string,
+    payload: Partial<LiveScreeningQuestionInput>
+  ) => {
+    const response = await authApi.put<{ status: string; data: LiveScreeningQuestionResponse }>(
+      `/jobs/${jobId}/screening-questions/${questionId}`,
+      payload
+    );
+    return response.data;
+  },
+
+  /**
+   * 11) Live delete screening question (admin)
+   * DELETE /jobs/:jobId/screening-questions/:questionId
+   */
+  deleteLiveScreeningQuestion: async (jobId: string, questionId: string) => {
+    const response = await authApi.delete<{
+      status: string;
+      data: { deleted: boolean; question_id: string };
+    }>(`/jobs/${jobId}/screening-questions/${questionId}`);
+    return response.data;
+  },
+
+  /**
+   * 12) Reopen job (admin)
+   * POST /jobs/:jobId/reopen
+   */
+  reopenJob: async (jobId: string) => {
+    const response = await authApi.post<{ status: string; data: any }>(`/jobs/${jobId}/reopen`);
+    return {
+      status: response.data.status,
+      data: mapToFrontend(response.data.data),
+    };
+  },
 };

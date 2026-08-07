@@ -177,6 +177,23 @@
   .animate-shimmer-sweep {
     animation: shimmer-sweep 2.5s ease-in-out infinite;
   }
+
+  .animate-slide-up-bottom {
+    @media (max-width: 639px) {
+      animation: slide-up-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform;
+    }
+  }
+}
+
+@keyframes slide-up-bottom {
+  0% {
+    transform: translate3d(0, 100%, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 @keyframes shimmer-sweep {
