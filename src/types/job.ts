@@ -190,3 +190,141 @@ export interface WindowRequestReviewedPayload {
   job_id: string;
   at: string;
 }
+
+/* ==========================================================================
+   Milestone 3 Types & Interfaces
+   ========================================================================== */
+
+export interface PastApplicantItem {
+  queue_entry_id: string;
+  status: string;
+  joined_at: string;
+  session_started_at: string | null;
+  session_ended_at: string | null;
+  session_duration_seconds: number;
+  outcome: string | null;
+  rating: number | null;
+  interviewer_id: string | null;
+  participant: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface PastApplicantsResponse {
+  total: number;
+  page: number;
+  limit: number;
+  applicants: PastApplicantItem[];
+}
+
+export interface VersionedScreeningAnswer {
+  question_id: string;
+  question: string;
+  sort_order: number;
+  selected_option_index: number;
+  selected_option_text: string | null;
+}
+
+export interface InterviewNoteAuthor {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface InterviewNote {
+  id: string;
+  content: string;
+  author: InterviewNoteAuthor;
+  created_at: string;
+  edited_at: string | null;
+  editor?: InterviewNoteAuthor | null;
+}
+
+export interface PastApplicantDetail {
+  queue_entry_id: string;
+  status: string;
+  joined_at: string;
+  called_at: string | null;
+  session_started_at: string | null;
+  session_ended_at: string | null;
+  session_duration_seconds: number;
+  outcome: string | null;
+  rating: number | null;
+  interviewer_id: string | null;
+  participant: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
+  screening_answers: VersionedScreeningAnswer[];
+  interview_notes: InterviewNote[];
+}
+
+export interface JobFunnelMetrics {
+  job_id: string;
+  total_views: number;
+  total_qualified: number;
+  total_disqualified: number;
+}
+
+export interface JobWithMetricsResponse {
+  id: string;
+  company_id: string;
+  title: string;
+  location: string | null;
+  employment_type: string;
+  salary_range_from?: number;
+  salary_range_to?: number;
+  department?: string | null;
+  description?: string | null;
+  requirements?: string | null;
+  published_at?: string;
+  queue_status?: string;
+  screening_questions?: any[];
+  windows?: any[];
+  queue_count: number;
+  total_count: number;
+  users?: any[];
+  applicants?: any[];
+  metrics: {
+    total_views: number;
+    total_qualified: number;
+    total_disqualified: number;
+  };
+  [key: string]: any;
+}
+
+export interface LiveScreeningQuestionOptionInput {
+  text: string;
+  is_deal_breaker: boolean;
+}
+
+export interface LiveScreeningQuestionInput {
+  text: string;
+  options: LiveScreeningQuestionOptionInput[];
+}
+
+export interface LiveScreeningQuestionResponse {
+  id: string;
+  text: string;
+  sort_order: number;
+  compliance_status: string;
+  compliance_notes: string | null;
+  options: Array<{
+    text: string;
+    is_deal_breaker: boolean;
+    sort_order: number;
+  }>;
+}
+
+export interface SubmitScreeningAnswerInput {
+  question_id: string;
+  selected_option_index: number;
+}
+

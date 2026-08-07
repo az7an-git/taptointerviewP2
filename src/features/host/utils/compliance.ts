@@ -13,19 +13,19 @@ const TIER_PRESENTATION: Record<
 > = {
   approved: {
     label: "Clear",
-    badgeClass: "bg-green-50 text-green-700 border-green-200",
+    badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   flagged: {
     label: "Caution",
-    badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+    badgeClass: "bg-yellow-50 text-yellow-700 border-yellow-200",
   },
   blocked: {
     label: "Blocked",
-    badgeClass: "bg-red-50 text-red-700 border-red-200",
+    badgeClass: "bg-red-50 text-red-600 border-red-200",
   },
   pending: {
     label: "Pending review",
-    badgeClass: "bg-slate-50 text-slate-600 border-slate-200",
+    badgeClass: "bg-gray-100 text-gray-700 border-gray-300",
   },
 };
 
