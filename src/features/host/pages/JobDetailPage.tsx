@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Archive, Edit, Briefcase } from "lucide-react";
+import { ArrowLeft, Archive, Edit, Briefcase, RotateCcw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/common/ui/PageHeader";
 import { ScreeningQuestionsManager } from "../components/screening-questions";
 import { QueueWindowScheduler } from "../components/queue-window-scheduler";
-import { JobDetailSkeleton, LiveQueueCard, JobSummaryCard, JobInterviewersManager } from "../components";
+import { JobDetailSkeleton, LiveQueueCard, JobSummaryCard, JobInterviewersManager, JobFunnelMetricsCard, PastApplicantsSection } from "../components";
 import { Job, QueueWindow, ScreeningQuestion } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
 import { toast } from "sonner";
@@ -15,14 +15,18 @@ import { blocksAdmitNext, hasActiveSessionFlow } from "../utils/queueEntryStatus
 import { useJobRealtime } from "@/hooks/useJobRealtime";
 
 
+let globalJobDetailCache: Record<string, Job> = {};
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const basePath = useMemo(() => user?.role === 'interviewer' ? '/interviewer' : '/admin', [user?.role]);
 
-  const [job, setJob] = useState<Job | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cachedJob = id ? globalJobDetailCache[id] : null;
+  const [job, setJob] = useState<Job | null>(cachedJob || null);
+  const [isLoading, setIsLoading] = useState(!cachedJob);
+  const [isReopening, setIsReopening] = useState(false);
   const queueWindowsRef = useRef<HTMLDivElement>(null);
   const [queuePanelHeight, setQueuePanelHeight] = useState<number | null>(null);
 
@@ -45,10 +49,13 @@ export default function JobDetailPage() {
   useEffect(() => {
     const fetchJobDetails = async () => {
       if (!id) return;
-      setIsLoading(true);
+      if (!globalJobDetailCache[id]) {
+        setIsLoading(true);
+      }
       try {
         const response = await jobsApi.getJob(id);
         setJob(response.data);
+        globalJobDetailCache[id] = response.data;
       } catch (error) {
         console.error("Failed to load job details from API:", error);
         toast.error("Failed to load job details.");
@@ -71,6 +78,7 @@ export default function JobDetailPage() {
     try {
       const response = await jobsApi.getJob(id);
       setJob(response.data);
+      globalJobDetailCache[id] = response.data;
     } catch {
     }
   }, [id]);
@@ -138,6 +146,21 @@ export default function JobDetailPage() {
     }
   };
 
+  const handleReopenJob = async () => {
+    if (!id) return;
+    setIsReopening(true);
+    try {
+      const response = await jobsApi.reopenJob(id);
+      setJob(response.data);
+      toast.success("Job reopened successfully.");
+    } catch (error) {
+      console.error("Failed to reopen job:", error);
+      toast.error("Failed to reopen job.");
+    } finally {
+      setIsReopening(false);
+    }
+  };
+
   if (isLoading) {
     return <JobDetailSkeleton />;
   }
@@ -158,7 +181,13 @@ export default function JobDetailPage() {
     <div className="space-y-6">
       <div className="flex items-start gap-3 min-w-0">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (window.history.state && window.history.state.idx > 0) {
+              navigate(-1);
+            } else {
+              navigate(`${basePath}/jobs`, { replace: true });
+            }
+          }}
           className="shrink-0 p-2 md:-ml-2 hover:bg-gray-100 rounded-full transition-colors group touch-manipulation mt-1 md:mt-2 cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-[#FF512F]" />
@@ -170,24 +199,37 @@ export default function JobDetailPage() {
             title={job.title}
             truncateTitle
             actions={
-              job.status !== "Closed" && user?.role !== 'interviewer' && (
+              user?.role !== 'interviewer' && (
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <Link
-                    to={`${basePath}/jobs/${id}/edit`}
-                    state={{ from: "details" }}
-                    className="w-fit px-2 sm:px-3 py-1.5 border border-gray-200 hover:border-[#FF512F] bg-white text-gray-700 hover:text-[#FF512F] rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer touch-manipulation shadow-sm"
-                  >
-                    <Edit className="w-3.5 h-3.5 shrink-0" />
-                    Edit Job Details
-                  </Link>
+                  {job.status === "Closed" ? (
+                    <button
+                      onClick={handleReopenJob}
+                      disabled={isReopening}
+                      className="w-fit px-2 sm:px-3 py-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-colors cursor-pointer touch-manipulation disabled:opacity-50"
+                    >
+                      <RotateCcw className={`w-3 h-3 shrink-0 ${isReopening ? "animate-spin" : ""}`} />
+                      Reopen Job
+                    </button>
+                  ) : (
+                    <>
+                      <Link
+                        to={`${basePath}/jobs/${id}/edit`}
+                        state={{ from: "details" }}
+                        className="w-fit px-2 sm:px-3 py-1.5 border border-gray-200 hover:border-[#FF512F] bg-white text-gray-700 hover:text-[#FF512F] rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer touch-manipulation shadow-sm"
+                      >
+                        <Edit className="w-3.5 h-3.5 shrink-0" />
+                        Edit Job Details
+                      </Link>
 
-                  <button
-                    onClick={() => handleStatusChange("Closed")}
-                    className="w-fit px-2 sm:px-3 py-1.5 border border-red-200 bg-red-50 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-red-100 transition-colors cursor-pointer touch-manipulation"
-                  >
-                    <Archive className="w-3.5 h-3.5 shrink-0" />
-                    Close Job
-                  </button>
+                      <button
+                        onClick={() => handleStatusChange("Closed")}
+                        className="w-fit px-2 sm:px-3 py-1.5 border border-red-200 bg-red-50 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-red-100 transition-colors cursor-pointer touch-manipulation"
+                      >
+                        <Archive className="w-3.5 h-3.5 shrink-0" />
+                        Close Job
+                      </button>
+                    </>
+                  )}
                 </div>
               )
             }
@@ -196,6 +238,9 @@ export default function JobDetailPage() {
       </div>
 
       <JobSummaryCard job={job} />
+
+      {/* Milestone 3: Job Funnel Metrics */}
+      <JobFunnelMetricsCard jobId={id!} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div
@@ -230,15 +275,18 @@ export default function JobDetailPage() {
         </div>
       </div>
 
+      {/* Milestone 3: Past Applicants */}
+      <PastApplicantsSection jobId={id!} />
+
       <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-5 shadow-sm min-w-0">
         <ScreeningQuestionsManager
           jobId={id!}
           initialQuestions={job.screeningQuestions || []}
           persistToApi
-          showDragHandles={false}
+          showDragHandles={job.status !== "Closed" && user?.role !== 'interviewer'}
           onQuestionsChange={(questions: ScreeningQuestion[]) => setJob(prev => prev ? { ...prev, screeningQuestions: questions } : null)}
-          disabled={!isDraftJob(job.status)}
-          showAddButton={false}
+          disabled={job.status === "Closed" || user?.role === 'interviewer'}
+          showAddButton={job.status !== "Closed" && user?.role !== 'interviewer'}
         />
       </div>
 
@@ -248,3 +296,4 @@ export default function JobDetailPage() {
     </div>
   );
 }
+

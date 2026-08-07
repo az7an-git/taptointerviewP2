@@ -15,6 +15,7 @@ import { useBodyScrollLock } from "@/common/hooks/useBodyScrollLock";
 import { JobApplicant } from "@/types/job";
 import { Spinner } from "@/common/ui/Spinner";
 import { jobsApi } from "@/api/jobsApi";
+import { getStatusColors, getOutcomeColors } from "../../utils/badgeColors";
 
 interface ApplicantDetailsModalProps {
   jobId?: string;
@@ -79,20 +80,6 @@ export function ApplicantDetailsModal({
     return `${minutes}m ${remainingSeconds}s`;
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "declined" || s === "removed") {
-      return "bg-red-50 text-red-700 border-red-200";
-    }
-    if (s === "admitted" || s === "confirmed" || s === "hired") {
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    }
-    if (s === "waiting" || s === "called" || s === "in_session" || s === "follow_up" || s === "pending_outcome") {
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    }
-    return "bg-gray-50 text-gray-700 border-gray-200";
-  };
-
   const getOutcomeLabel = (outcome: string | null) => {
     if (!outcome) return "N/A";
     const o = outcome.toLowerCase();
@@ -100,21 +87,6 @@ export function ApplicantDetailsModal({
     if (o === "follow_up") return "Follow Up";
     if (o === "not_a_fit") return "Not a Fit";
     return outcome;
-  };
-
-  const getOutcomeBadgeClass = (outcome: string | null) => {
-    if (!outcome) return "bg-gray-50 text-gray-700 border-gray-200";
-    const o = outcome.toLowerCase();
-    if (o === "not_a_fit") {
-      return "bg-red-50 text-red-700 border-red-200";
-    }
-    if (o === "hired") {
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    }
-    if (o === "follow_up") {
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    }
-    return "bg-gray-50 text-gray-700 border-gray-200";
   };
 
   const renderStars = (rating: number | null) => {
@@ -142,7 +114,7 @@ export function ApplicantDetailsModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden sm:min-h-[450px]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
@@ -190,7 +162,7 @@ export function ApplicantDetailsModal({
                     Phone:
                   </span>
                   <span className="text-gray-700 font-bold break-all text-right">
-                    {currentApplicant.participant.phone || "-"}
+                    {currentApplicant.participant.phone || "N/A"}
                   </span>
                 </div>
               </div>
@@ -204,13 +176,13 @@ export function ApplicantDetailsModal({
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-400 font-medium">Queue Status:</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeClass(currentApplicant.status)}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColors(currentApplicant.status)}`}>
                     {currentApplicant.status}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-400 font-medium">Interview Outcome:</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getOutcomeBadgeClass(currentApplicant.outcome)}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getOutcomeColors(currentApplicant.outcome || undefined)}`}>
                     {getOutcomeLabel(currentApplicant.outcome)}
                   </span>
                 </div>
@@ -274,16 +246,7 @@ export function ApplicantDetailsModal({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] rounded-lg transition-all shadow-md cursor-pointer"
-          >
-            Close
-          </button>
-        </div>
+
       </div>
     </div>,
     document.body

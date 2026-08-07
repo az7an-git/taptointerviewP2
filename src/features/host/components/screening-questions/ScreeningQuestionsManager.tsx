@@ -139,12 +139,15 @@ export default function ScreeningQuestionsManager({
 
       if (persistToApi && saved.length > 0) {
         try {
+          setIsRunningCompliance(true);
           await runComplianceReviewAfterSave();
         } catch (reviewError) {
           console.error("Failed to run compliance review:", reviewError);
           toast.error(
             "Questions saved, but compliance review failed. Try editing and saving again in a moment."
           );
+        } finally {
+          setIsRunningCompliance(false);
         }
       } else {
         toast.success("Qualification questions saved.");

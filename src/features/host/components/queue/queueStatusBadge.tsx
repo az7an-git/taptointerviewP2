@@ -43,23 +43,23 @@ function getStatusStyle(
     if (s === "admitted" || s === "confirmed")
         return {
             dot: "bg-emerald-500",
-            label: "text-gray-700",
-            bgClass: "bg-white",
-            borderClass: "border-gray-200",
+            label: "text-emerald-700",
+            bgClass: "bg-emerald-50",
+            borderClass: "border-emerald-200",
         };
     if (s === "in_session")
         return {
-            dot: "bg-[#FF512F] animate-pulse",
-            label: "text-gray-700",
-            bgClass: "bg-white",
-            borderClass: "border-gray-200",
+            dot: "bg-orange-500 animate-pulse",
+            label: "text-orange-700",
+            bgClass: "bg-orange-50",
+            borderClass: "border-orange-200",
         };
     if (s === "pending_outcome")
         return {
-            dot: "bg-gray-400",
-            label: "text-gray-600",
-            bgClass: "bg-white",
-            borderClass: "border-gray-200",
+            dot: "bg-gray-500",
+            label: "text-gray-700",
+            bgClass: "bg-gray-100",
+            borderClass: "border-gray-300",
         };
     if (s === "resolved" && outcome) {
         if (outcome === "hired")
@@ -86,9 +86,9 @@ function getStatusStyle(
     }
     if (s === "resolved")
         return {
-            dot: "bg-gray-300",
+            dot: "bg-gray-400",
             label: "text-gray-500",
-            bgClass: "bg-white",
+            bgClass: "bg-gray-50 opacity-80",
             borderClass: "border-gray-200",
         };
     if (s === "declined" || s === "removed")
