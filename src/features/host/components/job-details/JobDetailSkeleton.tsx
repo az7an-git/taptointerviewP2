@@ -53,7 +53,6 @@ export default function JobDetailSkeleton() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Description & Requirements Section */}
           <div className="lg:col-span-2 space-y-6 min-h-[220px]">
-            {/* Description */}
             <div className="space-y-3">
               <div className="h-3 bg-gray-200 rounded-md w-24" />
               <div className="space-y-2">
@@ -63,7 +62,6 @@ export default function JobDetailSkeleton() {
               </div>
             </div>
 
-            {/* Requirements */}
             <div className="space-y-3 pt-6 border-t border-gray-100">
               <div className="h-3 bg-gray-200 rounded-md w-28" />
               <div className="space-y-2">
@@ -91,9 +89,24 @@ export default function JobDetailSkeleton() {
         </div>
       </div>
 
+      {/* Funnel Metrics Card Skeleton */}
+      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-4 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="h-4 bg-gray-200 rounded-md w-36" />
+          <div className="w-4 h-4 bg-gray-200 rounded" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="p-3 border border-gray-100 rounded-xl text-center space-y-2 bg-gray-50/50">
+              <div className="h-3 bg-gray-200 rounded-md w-16 mx-auto" />
+              <div className="h-6 bg-gray-200 rounded-md w-10 mx-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Middle Row: Live Queue & Queue Windows Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-pulse">
-        {/* Live Queue Skeleton */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col h-full min-w-0 space-y-6">
           <div className="flex items-center justify-between">
             <div className="h-4 bg-gray-200 rounded-md w-24" />
@@ -116,7 +129,6 @@ export default function JobDetailSkeleton() {
           </div>
         </div>
 
-        {/* Queue Scheduler Skeleton */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-w-0 space-y-6">
           <div className="flex items-center justify-between">
             <div className="h-4 bg-gray-200 rounded-md w-36" />
@@ -136,7 +148,44 @@ export default function JobDetailSkeleton() {
         </div>
       </div>
 
-      {/* Bottom Row: Screening Questions Skeleton */}
+      {/* Past Applicants Skeleton */}
+      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-5 animate-pulse">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-gray-200 rounded-full" />
+          <div className="h-4 bg-gray-200 rounded-md w-36" />
+        </div>
+        <div className="overflow-x-auto -mx-5 px-5">
+          <table className="w-full text-left text-xs text-gray-300">
+            <thead className="bg-gray-50 uppercase tracking-wider font-semibold border-b border-gray-100">
+              <tr>
+                <th className="px-4 py-3">Applicant</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Applied Date</th>
+                <th className="px-4 py-3">Outcome</th>
+                <th className="px-4 py-3">Rating</th>
+                <th className="px-4 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <tr key={idx}>
+                  <td className="px-4 py-3">
+                    <div className="h-4 bg-gray-200 rounded-md w-28 mb-1.5" />
+                    <div className="h-3 bg-gray-100 rounded-md w-40" />
+                  </td>
+                  <td className="px-4 py-3"><div className="h-5 bg-gray-200 rounded-full w-16" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded-md w-20" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded-md w-20" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded-md w-12" /></td>
+                  <td className="px-4 py-3 text-right"><div className="h-6 bg-gray-200 rounded-md w-20 ml-auto" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Screening Questions Skeleton */}
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-w-0 space-y-6 animate-pulse">
         <div className="flex items-center justify-between">
           <div className="h-4 bg-gray-200 rounded-md w-44" />
