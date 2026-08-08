@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { MapPin, Briefcase, DollarSign } from "lucide-react";
+import { MapPin, Briefcase, DollarSign, FileText, CheckSquare, BarChart3 } from "lucide-react";
 import { Job } from "@/types/job";
 
 interface JobSummaryCardProps {
@@ -63,7 +63,10 @@ export default function JobSummaryCard({ job }: JobSummaryCardProps) {
         <div className="lg:col-span-2 space-y-5">
           {/* Description */}
           <div className="space-y-2">
-            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest shrink-0">Description</h3>
+            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2 shrink-0">
+              <FileText className="w-4 h-4 text-[#FF512F]" />
+              Description
+            </h3>
             <p className={`text-sm text-gray-600 leading-relaxed break-words whitespace-pre-wrap ${!isDescExpanded ? "line-clamp-3" : ""}`}>
               {job.description}
             </p>
@@ -80,7 +83,10 @@ export default function JobSummaryCard({ job }: JobSummaryCardProps) {
           {/* Requirements */}
           {job.requirements && (
             <div className="space-y-2 pt-5 border-t border-gray-100">
-              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest shrink-0">Requirements</h3>
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2 shrink-0">
+                <CheckSquare className="w-4 h-4 text-[#FF512F]" />
+                Requirements
+              </h3>
               <p className={`text-sm text-gray-600 leading-relaxed break-words whitespace-pre-wrap ${!isReqExpanded ? "line-clamp-3" : ""}`}>
                 {job.requirements}
               </p>
@@ -98,7 +104,10 @@ export default function JobSummaryCard({ job }: JobSummaryCardProps) {
 
         {/* Stats Section */}
         <div className="lg:col-span-1 lg:border-l lg:border-gray-100 lg:pl-6 space-y-2.5">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest">Queue Stats</h3>
+          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-[#FF512F]" />
+            Queue Stats
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-gray-50/80 border border-gray-100/50 hover:border-[#FF512F]/20 rounded-xl text-center transition-all">
               <div className="text-2xl font-extrabold text-gray-900 tracking-tight">{job.queueCount || 0}</div>

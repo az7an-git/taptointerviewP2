@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Edit2 } from "lucide-react";
 import { InterviewNote } from "@/types/job";
 import { Spinner } from "@/common/ui/Spinner";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole, ROLES } from "@/common/utils/permissions";
 
 interface InterviewNotesListProps {
     notes: InterviewNote[];
@@ -14,6 +16,7 @@ export default function InterviewNotesList({
     onAddNote,
     onEditNote,
 }: InterviewNotesListProps) {
+    const { user } = useAuth();
     const [newNoteContent, setNewNoteContent] = useState("");
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
     const [editNoteContent, setEditNoteContent] = useState("");
@@ -26,6 +29,8 @@ export default function InterviewNotesList({
         try {
             await onAddNote(newNoteContent.trim());
             setNewNoteContent("");
+        } catch (err) {
+            // Error handled by parent
         } finally {
             setIsAdding(false);
         }
@@ -38,6 +43,8 @@ export default function InterviewNotesList({
             await onEditNote(noteId, editNoteContent.trim());
             setEditingNoteId(null);
             setEditNoteContent("");
+        } catch (err) {
+            // Error handled by parent
         } finally {
             setSavingNoteId(null);
         }
@@ -143,16 +150,18 @@ export default function InterviewNotesList({
                                             <span className="ml-1 italic text-amber-600">(edited)</span>
                                         )}
                                     </span>
-                                    <button
-                                        onClick={() => {
-                                            setEditingNoteId(note.id);
-                                            setEditNoteContent(note.content);
-                                        }}
-                                        className="text-gray-400 hover:text-gray-600 cursor-pointer p-0.5"
-                                        title="Edit note"
-                                    >
-                                        <Edit2 className="w-3 h-3" />
-                                    </button>
+                                    {(user?.id === note.author?.id || normalizeRole(user?.role) === ROLES.ADMIN) && (
+                                        <button
+                                            onClick={() => {
+                                                setEditingNoteId(note.id);
+                                                setEditNoteContent(note.content);
+                                            }}
+                                            className="text-gray-400 hover:text-gray-600 cursor-pointer p-0.5"
+                                            title="Edit note"
+                                        >
+                                            <Edit2 className="w-3 h-3" />
+                                        </button>
+                                    )}
                                 </div>
                                 <p className="text-gray-800 font-medium break-words whitespace-pre-wrap">
                                     {note.content}

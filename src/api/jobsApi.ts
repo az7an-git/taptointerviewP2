@@ -444,6 +444,14 @@ export const jobsApi = {
     };
   },
 
+  recordJobView: async (slug: string, jobId: string) => {
+    const response = await publicApi.post<{
+      status: string;
+      data: any;
+    }>(`/jobs/company/${slug}/${jobId}/view`);
+    return response.data;
+  },
+
   submitScreeningAnswers: async (slug: string, jobId: string, answers: any[]) => {
     const response = await publicApi.post<{
       status: string;

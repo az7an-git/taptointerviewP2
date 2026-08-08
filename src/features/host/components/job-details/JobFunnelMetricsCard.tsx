@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Eye, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { Eye, CheckCircle2, XCircle, RotateCw, TrendingUp } from "lucide-react";
 import { jobsApi } from "@/api/jobsApi";
 import { JobFunnelMetrics } from "@/types/job";
 import { Spinner } from "@/common/ui/Spinner";
 import { useIntersectionObserver } from "@/common/hooks/useIntersectionObserver";
+import { useJobRealtime } from "@/hooks/useJobRealtime";
 
 interface JobFunnelMetricsCardProps {
     jobId: string;
@@ -17,6 +18,21 @@ export default function JobFunnelMetricsCard({ jobId }: JobFunnelMetricsCardProp
     const [isLoading, setIsLoading] = useState(!cachedMetrics);
     const [hasFetched, setHasFetched] = useState(Boolean(cachedMetrics));
     const { ref, isIntersecting } = useIntersectionObserver({ triggerOnce: true, rootMargin: "100px" });
+
+    useJobRealtime(jobId, () => { }, {
+        onMetricsUpdate: (payload: any) => {
+            if (payload && payload.job_id === jobId) {
+                const updatedMetrics = {
+                    job_id: payload.job_id,
+                    total_views: payload.total_views,
+                    total_qualified: payload.total_qualified,
+                    total_disqualified: payload.total_disqualified,
+                };
+                setMetrics(updatedMetrics);
+                globalMetricsCache[jobId] = updatedMetrics;
+            }
+        },
+    });
 
     const fetchMetrics = async () => {
         setIsLoading(true);
@@ -70,19 +86,20 @@ export default function JobFunnelMetricsCard({ jobId }: JobFunnelMetricsCardProp
     return (
         <div ref={ref} className="bg-white border border-gray-100 rounded-xl p-4 sm:p-5 shadow-sm space-y-4 min-w-0">
             <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-[#FF512F]" />
                     Job Funnel Metrics
                 </h3>
                 <button
                     onClick={fetchMetrics}
                     disabled={isLoading}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md cursor-pointer disabled:opacity-50"
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                     title="Refresh metrics"
                 >
                     {isLoading && metrics ? (
-                        <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-[#FF512F]" />
+                        <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-gray-500" />
                     ) : (
-                        <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <RotateCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
                     )}
                 </button>
             </div>
