@@ -1,7 +1,8 @@
 import React from "react";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ScreeningQuestion, ScreeningQuestionOption } from "@/types/job";
+import { Spinner } from "@/common/ui/Spinner";
 import {
   applyDealBreakerToggle,
   canToggleDealBreaker,
@@ -154,7 +155,7 @@ export function AddQuestionForm({
         value={draft.text}
         onChange={(e) => setDraft((prev) => ({ ...prev, text: e.target.value }))}
         placeholder="Enter your qualification question..."
-        className="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#FF512F]/20 outline-none resize-none"
+        className="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-[#FF512F]/60 focus:ring-1 focus:ring-[#FF512F]/30 resize-none transition-all"
         rows={2}
       />
 
@@ -168,7 +169,7 @@ export function AddQuestionForm({
           </span>
         </div>
 
-        <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 [scrollbar-width:thin]">
+        <div className="max-h-[240px] overflow-y-auto pr-3 space-y-2.5 [scrollbar-width:thin]">
           {draft.options.map((opt, index) => {
             const dealBreakerDisabled = !canToggleDealBreaker(
               draft.options,
@@ -177,42 +178,45 @@ export function AddQuestionForm({
             );
 
             return (
-              <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div
+                key={index}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 sm:p-0 bg-white/80 sm:bg-transparent rounded-xl border border-gray-200/80 sm:border-0 shadow-2xs sm:shadow-none min-w-0"
+              >
                 <input
                   type="text"
                   value={opt.text}
                   onChange={(e) => updateDraftOption(index, { text: e.target.value })}
                   placeholder={`Option ${index + 1}`}
-                  className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#FF512F]/20 outline-none ${
-                    emptyOptionIndexes.has(index)
-                      ? "border-red-400 ring-1 ring-red-100"
-                      : "border-gray-200"
-                  }`}
+                  className={`w-full sm:flex-1 min-w-0 bg-white border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#FF512F]/60 focus:ring-1 focus:ring-[#FF512F]/30 transition-all ${emptyOptionIndexes.has(index)
+                    ? "border-red-400 ring-1 ring-red-100"
+                    : "border-gray-200"
+                    }`}
                 />
-                <label
-                  className={`flex items-center gap-2 shrink-0 px-1 ${
-                    dealBreakerDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={opt.isDealBreaker}
-                    disabled={dealBreakerDisabled}
-                    onChange={(e) =>
-                      updateDraftOption(index, { isDealBreaker: e.target.checked })
-                    }
-                    className="rounded border-gray-300 text-[#FF512F] focus:ring-[#FF512F]/20 disabled:cursor-not-allowed"
-                  />
-                  <span className="text-xs font-bold text-gray-600">Deal-breaker</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => removeDraftOption(index)}
-                  className="text-gray-400 hover:text-red-500 p-2 self-end sm:self-center cursor-pointer"
-                  aria-label="Remove option"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 w-full sm:w-auto pt-0.5 sm:pt-0">
+                  <label
+                    className={`flex items-center gap-2 shrink-0 ${dealBreakerDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                      }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={opt.isDealBreaker}
+                      disabled={dealBreakerDisabled}
+                      onChange={(e) =>
+                        updateDraftOption(index, { isDealBreaker: e.target.checked })
+                      }
+                      className="rounded border-gray-300 text-[#FF512F] focus:ring-[#FF512F]/20 disabled:cursor-not-allowed w-4 h-4"
+                    />
+                    <span className="text-xs font-bold text-gray-600 select-none">Deal-breaker</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeDraftOption(index)}
+                    className="text-gray-400 hover:text-red-500 p-1.5 shrink-0 cursor-pointer rounded-lg hover:bg-red-50 transition-colors"
+                    aria-label="Remove option"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -258,7 +262,7 @@ export function AddQuestionForm({
           disabled={isSaving}
           className="px-4 py-1.5 bg-[#FF512F] text-white text-xs font-bold rounded-lg hover:bg-[#E04020] shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
         >
-          {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          {isSaving && <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-white" />}
           {submitLabel}
         </button>
       </div>

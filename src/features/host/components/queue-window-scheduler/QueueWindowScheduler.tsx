@@ -1,7 +1,7 @@
 import React from "react";
 import { QueueWindow, QueueWindowStatus } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
-import { Plus, AlertCircle, Clock, Bell } from "lucide-react";
+import { Plus, AlertCircle, Clock, Bell, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import {
   hasFutureQueueWindow,
@@ -461,6 +461,7 @@ export default function QueueWindowScheduler({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
+          <Calendar className="w-4 h-4 text-[#FF512F]" />
           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Queue Windows</h3>
           {isAdmin && pendingRequests.length > 0 && (
             <button

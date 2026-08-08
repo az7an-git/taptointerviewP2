@@ -19,6 +19,7 @@ interface ScreeningQuestionCardProps {
   onDelete: (index: number) => void;
   dragHandleProps?: DragHandleProps;
   isDragTarget?: boolean;
+  isDragging?: boolean;
 }
 
 export function ScreeningQuestionCard({
@@ -30,12 +31,15 @@ export function ScreeningQuestionCard({
   onDelete,
   dragHandleProps,
   isDragTarget = false,
+  isDragging = false,
 }: ScreeningQuestionCardProps) {
   return (
     <div
-      className={`w-full bg-white border rounded-xl p-3 sm:p-4 shadow-sm flex items-start gap-2 sm:gap-3 group transition-all ${isDragTarget
-        ? "border-[#FF512F]/50 ring-2 ring-[#FF512F]/15"
-        : "border-gray-100 hover:border-[#FF512F]/30"
+      className={`w-full bg-white border rounded-xl p-3 sm:p-4 shadow-sm flex items-start gap-2 sm:gap-3 group transition-all duration-150 ${isDragging
+        ? "opacity-40 border-dashed border-[#FF512F]/60 bg-[#FF512F]/[0.02] scale-[0.99] shadow-none"
+        : isDragTarget
+          ? "border-[#FF512F] ring-2 ring-[#FF512F]/40 bg-[#FF512F]/[0.03] shadow-lg -translate-y-0.5"
+          : "border-gray-100 hover:border-[#FF512F]/30"
         }`}
       onDragOver={dragHandleProps?.onDragOver}
       onDrop={dragHandleProps?.onDrop}
@@ -45,7 +49,8 @@ export function ScreeningQuestionCard({
           type="button"
           aria-label={`Reorder question ${index + 1}`}
           disabled={disabled}
-          className="mt-1 text-gray-300 group-hover:text-gray-500 cursor-grab active:cursor-grabbing p-0.5 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+          className={`mt-1 cursor-grab active:cursor-grabbing p-0.5 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ${isDragging ? "text-[#FF512F]" : "text-gray-300 group-hover:text-gray-500 hover:text-[#FF512F]"
+            }`}
           {...dragHandleProps}
         >
           <GripVertical className="w-4 h-4" />
