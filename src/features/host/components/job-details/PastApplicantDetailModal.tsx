@@ -89,14 +89,29 @@ export default function PastApplicantDetailModal({
     const handleAddNote = useCallback(
         async (content: string) => {
             if (!queueEntryId || !currentDetail) return;
-            const res = await jobsApi.addInterviewNote(jobId, queueEntryId, content);
-            toast.success("Note added.");
-            const updatedDetail = {
-                ...currentDetail,
-                interview_notes: [res.data, ...(currentDetail.interview_notes || [])],
-            };
-            setDetail(updatedDetail);
-            cacheRef.current[queueEntryId] = updatedDetail;
+            try {
+                const res = await jobsApi.addInterviewNote(jobId, queueEntryId, content);
+                if (res.status === "fail") {
+                    toast.error(res.data as unknown as string || "Failed to add note");
+                    throw new Error(res.data as unknown as string);
+                }
+                toast.success("Note added.");
+                const updatedDetail = {
+                    ...currentDetail,
+                    interview_notes: [res.data as any, ...(currentDetail.interview_notes || [])],
+                };
+                setDetail(updatedDetail);
+                cacheRef.current[queueEntryId] = updatedDetail;
+            } catch (error: any) {
+                if (error.response?.data?.data) {
+                    toast.error(error.response.data.data);
+                } else if (error.message && error.message !== "[object Object]") {
+                    // Already handled above or generic network error
+                } else {
+                    toast.error("Failed to add note");
+                }
+                throw error;
+            }
         },
         [jobId, queueEntryId, currentDetail]
     );
@@ -104,16 +119,31 @@ export default function PastApplicantDetailModal({
     const handleEditNote = useCallback(
         async (noteId: string, content: string) => {
             if (!currentDetail || !queueEntryId) return;
-            const res = await jobsApi.editInterviewNote(jobId, noteId, content);
-            toast.success("Note updated.");
-            const updatedDetail = {
-                ...currentDetail,
-                interview_notes: (currentDetail.interview_notes || []).map((n) =>
-                    n.id === noteId ? res.data : n
-                ),
-            };
-            setDetail(updatedDetail);
-            cacheRef.current[queueEntryId] = updatedDetail;
+            try {
+                const res = await jobsApi.editInterviewNote(jobId, noteId, content);
+                if (res.status === "fail") {
+                    toast.error(res.data as unknown as string || "Failed to edit note");
+                    throw new Error(res.data as unknown as string);
+                }
+                toast.success("Note updated.");
+                const updatedDetail = {
+                    ...currentDetail,
+                    interview_notes: (currentDetail.interview_notes || []).map((n) =>
+                        n.id === noteId ? (res.data as any) : n
+                    ),
+                };
+                setDetail(updatedDetail);
+                cacheRef.current[queueEntryId] = updatedDetail;
+            } catch (error: any) {
+                if (error.response?.data?.data) {
+                    toast.error(error.response.data.data);
+                } else if (error.message && error.message !== "[object Object]") {
+                    // Already handled above or generic network error
+                } else {
+                    toast.error("Failed to edit note");
+                }
+                throw error;
+            }
         },
         [jobId, currentDetail, queueEntryId]
     );
@@ -169,7 +199,7 @@ export default function PastApplicantDetailModal({
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden sm:min-h-[450px]">
+            <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
                     <div className="flex items-center gap-3 min-w-0 flex-1">

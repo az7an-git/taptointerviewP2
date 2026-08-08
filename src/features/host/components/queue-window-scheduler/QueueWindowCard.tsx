@@ -224,7 +224,7 @@ export function QueueWindowCard({
               className="px-4 py-2 bg-[#FF512F] text-white text-xs font-bold rounded-xl hover:bg-[#E04020] shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 min-h-[38px]"
             >
               {isSavingEdit ? (
-                <Spinner className="w-3.5 h-3.5 border-2 border-white/30 border-t-white" />
+                <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-white" />
               ) : (
                 <Check className="w-3.5 h-3.5" />
               )}
@@ -281,7 +281,7 @@ export function QueueWindowCard({
                       className="flex-1 sm:flex-none px-1.5 py-1.5 sm:px-3 sm:py-2 rounded-md hover:bg-orange-200/50 text-[#FF512F] text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-0.5 cursor-pointer disabled:opacity-50 touch-manipulation min-h-[24px] sm:min-h-[28px] whitespace-nowrap"
                     >
                       {isThisLoading ? (
-                        <Spinner className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-[#FF512F]/30 border-t-[#FF512F]" />
+                        <Spinner className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-t-2 border-b-2 border-[#FF512F]" />
                       ) : (
                         `+${mins >= 60 ? `${mins / 60}h` : `${mins}m`}`
                       )}
@@ -310,7 +310,7 @@ export function QueueWindowCard({
             className="w-full sm:w-auto px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[24px] sm:min-h-[28px] shrink-0"
           >
             {quickActionLoading === 'close-early' ? (
-              <Spinner className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-red-600/30 border-t-red-600" />
+              <Spinner className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-t-2 border-b-2 border-red-600" />
             ) : (
               <XCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
             )}

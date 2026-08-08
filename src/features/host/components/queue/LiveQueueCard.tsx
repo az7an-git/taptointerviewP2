@@ -89,8 +89,11 @@ export default function LiveQueueCard({
             </div>
           </div>
         )}
-        <div className="flex items-center gap-3 mb-3 shrink-0">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Waiting Room</h3>
+        <div className="flex items-center gap-2 mb-3 shrink-0">
+          <Clock className="w-4 h-4 text-[#FF512F]" />
+          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+            Waiting Room {sortedCandidates.length > 0 && `(${sortedCandidates.length})`}
+          </h3>
         </div>
 
         <div className="divide-y divide-gray-50 overflow-y-auto max-h-[520px] pr-1.5 scrollbar-brand [scrollbar-gutter:stable]">
@@ -107,29 +110,23 @@ export default function LiveQueueCard({
             sortedCandidates.map((candidate) => {
               const status = normalizeQueueStatus(candidate.status);
               return (
-                <div key={candidate.id} className="py-2.5 flex items-center justify-between gap-3 group min-w-0">
+                <div
+                  key={candidate.id}
+                  onClick={() => candidate.raw && setSelectedApplicant(candidate.raw)}
+                  className={`py-2.5 px-3 rounded-xl flex items-center justify-between gap-3 group min-w-0 transition-all ${candidate.raw ? "cursor-pointer hover:bg-orange-50/50 hover:border-orange-100" : ""}`}
+                >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 text-xs shrink-0">
                       {candidate.avatar}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[13px] font-bold text-gray-900 flex items-center gap-1.5 min-w-0">
-                        {candidate.raw ? (
-                          <button
-                            onClick={() => setSelectedApplicant(candidate.raw!)}
-                            className="truncate max-w-[180px] hover:text-[#FF512F] text-left font-bold cursor-pointer transition-colors"
-                            title="Click to view details"
-                          >
-                            {candidate.name}
-                          </button>
-                        ) : (
-                          <span
-                            className="truncate max-w-[180px]"
-                            title={candidate.name}
-                          >
-                            {candidate.name}
-                          </span>
-                        )}
+                      <div className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5 min-w-0">
+                        <span
+                          className="truncate max-w-[180px] group-hover:text-[#FF512F] transition-colors"
+                          title={candidate.name}
+                        >
+                          {candidate.name}
+                        </span>
                       </div>
                       <div className="text-[11px] text-gray-500 font-medium flex items-center gap-1 mt-0.5">
                         <Clock className="w-2.5 h-2.5 shrink-0" />
@@ -157,8 +154,12 @@ export default function LiveQueueCard({
                         </span>
                       ) : candidate.raw ? (
                         <button
-                          onClick={() => setSelectedApplicant(candidate.raw!)}
-                          className="px-2.5 py-0.5 bg-gray-50 hover:bg-[#FF512F] hover:text-white text-gray-600 border border-gray-200 hover:border-[#FF512F] rounded-md text-[11px] font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedApplicant(candidate.raw!);
+                          }}
+                          className="px-2.5 py-1 bg-orange-50 hover:bg-orange-100 text-[#FF512F] border border-orange-200 rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
                         >
                           View
                         </button>
