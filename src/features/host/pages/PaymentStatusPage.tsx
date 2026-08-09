@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, useParams } from "react-router-dom";
-import { Check, X, CreditCard, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Check, X, CreditCard, ArrowRight, AlertCircle } from "lucide-react";
 import { billingApi, PaymentStatusResponse } from "@/api/billingApi";
 import { useAuth } from "@/context/AuthContext";
+import { Spinner } from "@/common/ui/Spinner";
 
 export default function PaymentStatusPage() {
   const { refreshUser } = useAuth();
@@ -64,7 +65,7 @@ export default function PaymentStatusPage() {
       <div className="min-h-screen bg-gradient-to-br from-[#FFF5F2] to-[#FFEBE6] flex items-center justify-center p-4">
         <div className="bg-white/80 backdrop-blur-md border border-white/40 max-w-md w-full rounded-2xl p-8 shadow-xl text-center space-y-4 animate-pulse">
           <div className="flex justify-center">
-            <Loader2 className="w-12 h-12 text-[#FF512F] animate-spin" />
+            <Spinner className="w-12 h-12 border-t-2 border-b-2 border-[#FF512F]" />
           </div>
           <h2 className="text-xl font-black text-gray-900 tracking-tight">Verifying Payment</h2>
           <p className="text-sm text-gray-500 font-medium">

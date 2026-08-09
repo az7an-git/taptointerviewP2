@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate, useParams } from "react-router-dom";
-import { Loader2, CheckCircle, XCircle, BellRing, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, BellRing, AlertTriangle } from "lucide-react";
 import { participantApi } from "@/api/participantApi";
 import type { InspectResponse } from "@/api/participantApi";
 import { ParticipantHeader, ParticipantFooter } from "../components";
 import { useRealtimeChannel } from "@/hooks/useRealtimeChannel";
+import { Spinner } from "@/common/ui/Spinner";
 
 const INVALID_REASON_MESSAGES: Record<string, string> = {
   expired: "Your admission window has expired. You have been returned to the waiting room.",
@@ -158,7 +159,7 @@ export default function AdmitPage() {
           {isInspecting && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl text-center space-y-6 animate-pulse">
               <div className="w-16 h-16 bg-[#FF512F]/10 rounded-full flex items-center justify-center mx-auto border border-[#FF512F]/20">
-                <Loader2 className="w-8 h-8 text-[#FF512F] animate-spin" />
+                <Spinner className="w-8 h-8 border-t-2 border-b-2 border-[#FF512F]" />
               </div>
               <div className="space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#FF512F]">
@@ -251,7 +252,7 @@ export default function AdmitPage() {
                 className="w-full bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-[#FF512F]/20 hover:shadow-[#FF512F]/40 flex items-center justify-center gap-2 transform hover:scale-[1.01] cursor-pointer text-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
               >
                 {isConfirming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Spinner className="w-4 h-4 border-t-2 border-b-2 border-white" />
                 ) : (
                   <CheckCircle className="w-4 h-4" />
                 )}

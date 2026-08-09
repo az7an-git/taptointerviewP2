@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Archive, Edit, Briefcase, RotateCcw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/common/ui/PageHeader";
+import { Spinner } from "@/common/ui/Spinner";
 import { ScreeningQuestionsManager } from "../components/screening-questions";
 import { QueueWindowScheduler } from "../components/queue-window-scheduler";
 import { JobDetailSkeleton, LiveQueueCard, JobSummaryCard, JobInterviewersManager, JobFunnelMetricsCard, PastApplicantsSection } from "../components";
@@ -27,6 +28,7 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(cachedJob || null);
   const [isLoading, setIsLoading] = useState(!cachedJob);
   const [isReopening, setIsReopening] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const queueWindowsRef = useRef<HTMLDivElement>(null);
   const [queuePanelHeight, setQueuePanelHeight] = useState<number | null>(null);
 
@@ -130,6 +132,7 @@ export default function JobDetailPage() {
 
   const handleStatusChange = async (newStatus: Job["status"]) => {
     if (!job) return;
+    if (newStatus === "Closed") setIsClosing(true);
     try {
       let response;
       if (newStatus === "Closed") {
@@ -143,6 +146,8 @@ export default function JobDetailPage() {
       console.error(`Failed to update status to ${newStatus} on API, updating locally:`, error);
       setJob({ ...job, status: newStatus });
       toast.success(`Job status updated to ${newStatus}`);
+    } finally {
+      if (newStatus === "Closed") setIsClosing(false);
     }
   };
 
@@ -207,8 +212,8 @@ export default function JobDetailPage() {
                       disabled={isReopening}
                       className="w-fit px-2 sm:px-3 py-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-colors cursor-pointer touch-manipulation disabled:opacity-50"
                     >
-                      <RotateCcw className={`w-3 h-3 shrink-0 ${isReopening ? "animate-spin" : ""}`} />
-                      Reopen Job
+                      {isReopening ? <Spinner className="w-3.5 h-3.5 shrink-0 border-t-2 border-b-2 border-emerald-700" /> : <RotateCcw className="w-3 h-3 shrink-0" />}
+                      {isReopening ? "Reopening..." : "Reopen Job"}
                     </button>
                   ) : (
                     <>
@@ -223,10 +228,11 @@ export default function JobDetailPage() {
 
                       <button
                         onClick={() => handleStatusChange("Closed")}
-                        className="w-fit px-2 sm:px-3 py-1.5 border border-red-200 bg-red-50 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-red-100 transition-colors cursor-pointer touch-manipulation"
+                        disabled={isClosing}
+                        className="w-fit px-2 sm:px-3 py-1.5 border border-red-200 bg-red-50 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-red-100 transition-colors cursor-pointer touch-manipulation disabled:opacity-50"
                       >
-                        <Archive className="w-3.5 h-3.5 shrink-0" />
-                        Close Job
+                        {isClosing ? <Spinner className="w-3.5 h-3.5 shrink-0 border-t-2 border-b-2 border-red-700" /> : <Archive className="w-3.5 h-3.5 shrink-0" />}
+                        {isClosing ? "Closing..." : "Close Job"}
                       </button>
                     </>
                   )}
