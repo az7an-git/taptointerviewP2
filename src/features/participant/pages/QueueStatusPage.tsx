@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, Users, ShieldCheck, Zap, Loader2, PauseCircle, CheckCircle, Video, BellRing, XCircle } from "lucide-react";
+import { Clock, Users, ShieldCheck, Zap, PauseCircle, CheckCircle, Video, BellRing, XCircle } from "lucide-react";
 import publicApi from "@/api/publicApi";
 import { jobsApi } from "@/api/jobsApi";
 import { ParticipantHeader, ParticipantFooter } from "../components";
 import { useRealtimeChannel } from "@/hooks/useRealtimeChannel";
 import { formatWindowIso, parseWindowIso } from "@/common/utils/queueWindowDatetime";
+import { Spinner } from "@/common/ui/Spinner";
 
 interface QueueStatusData {
   status: string;
@@ -443,7 +444,7 @@ export default function QueueStatusPage() {
           {/* Loading (waiting in queue) */}
           {loading && !isAdmittedStatus(queueData?.status) && !isConfirmedStatus(queueData?.status) && !isInSessionStatus(queueData?.status) && !isInterviewWrappingUpStatus(queueData?.status) && !isInterviewFinishedStatus(queueData?.status) && (
             <div className="flex flex-col items-center gap-3 py-8">
-              <Loader2 className="w-8 h-8 text-[#FF512F] animate-spin" />
+              <Spinner className="w-8 h-8 border-t-2 border-b-2 border-[#FF512F]" />
               <p className="text-xs text-gray-500 font-medium">
                 Fetching your queue position...
               </p>

@@ -1,7 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
-  Loader2,
   CheckCircle,
   XCircle,
   Bookmark,
@@ -11,6 +10,7 @@ import { participantApi } from "@/api/participantApi";
 import type { ReserveResult } from "@/api/participantApi";
 import { formatWindowIso, parseWindowIso } from "@/common/utils/queueWindowDatetime";
 import { ParticipantHeader, ParticipantFooter } from "../components";
+import { Spinner } from "@/common/ui/Spinner";
 
 function formatNextWindowNote(startsAt: string, endsAt: string): string {
   const startParts = parseWindowIso(startsAt);
@@ -140,7 +140,7 @@ export default function QueueClosedActionPage({ action }: QueueClosedActionPageP
         <div className="w-full max-w-md">
           {isProcessing && (
             <StatusCard
-              icon={<Loader2 className="w-8 h-8 text-[#FF512F] animate-spin" />}
+              icon={<Spinner className="w-8 h-8 border-t-2 border-b-2 border-[#FF512F]" />}
               eyebrow="Processing"
               title={config.processing}
               message={`Confirming your request: ${config.label}`}
