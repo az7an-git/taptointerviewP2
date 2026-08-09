@@ -2,7 +2,8 @@ import React from "react";
 import { ScreeningQuestion } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
 import { reorderList, useListReorder } from "@/common/hooks/useListReorder";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, HelpCircle } from "lucide-react";
+import { Spinner } from "@/common/ui/Spinner";
 import { toast } from "sonner";
 import { countComplianceByTier, formatComplianceSummary } from "../../utils/compliance";
 import {
@@ -14,6 +15,7 @@ import {
 } from "../../utils/screeningQuestions";
 import { ScreeningQuestionCard } from "./ScreeningQuestionCard";
 import { AddQuestionForm } from "./AddQuestionForm";
+import ConfirmationModal from "@/common/ui/ConfirmationModal";
 
 interface Props {
   jobId: string;
@@ -54,6 +56,8 @@ export default function ScreeningQuestionsManager({
   const [isSaving, setIsSaving] = React.useState(false);
   const [isRunningCompliance, setIsRunningCompliance] = React.useState(false);
   const [dropTargetIndex, setDropTargetIndex] = React.useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+  const [deletePromptIndex, setDeletePromptIndex] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     onReviewingChange?.(isRunningCompliance);
@@ -119,7 +123,7 @@ export default function ScreeningQuestionsManager({
     }
   };
 
-  const handleSaveToApi = async (questionsToSave: ScreeningQuestion[]) => {
+  const handleSaveToApi = async (questionsToSave: ScreeningQuestion[], skipCompliance = false) => {
     if (!jobId || jobId === "new") {
       toast.error("Save the job details first before adding qualification questions.");
       return;
@@ -135,9 +139,23 @@ export default function ScreeningQuestionsManager({
     try {
       const response = await jobsApi.saveScreeningQuestions(jobId, questionsToSave);
       const saved = sortQuestionsByOrder(response.data.screeningQuestions || []);
-      applySavedQuestions(saved);
 
-      if (persistToApi && saved.length > 0) {
+      // If reordering, preserve the existing compliance status & notes so badges don't revert to pending
+      const mappedSaved = saved.map((sq) => {
+        const existing = questionsToSave.find((q) => q.id === sq.id || q.text === sq.text);
+        if (skipCompliance && existing) {
+          return {
+            ...sq,
+            complianceStatus: existing.complianceStatus ?? sq.complianceStatus,
+            complianceNotes: existing.complianceNotes ?? sq.complianceNotes,
+          };
+        }
+        return sq;
+      });
+
+      applySavedQuestions(mappedSaved);
+
+      if (persistToApi && saved.length > 0 && !skipCompliance) {
         try {
           setIsRunningCompliance(true);
           await runComplianceReviewAfterSave();
@@ -150,7 +168,7 @@ export default function ScreeningQuestionsManager({
           setIsRunningCompliance(false);
         }
       } else {
-        toast.success("Qualification questions saved.");
+        toast.success(skipCompliance ? "Questions reordered." : "Qualification questions saved.");
       }
     } catch (error) {
       console.error("Failed to save qualification questions:", error);
@@ -165,7 +183,7 @@ export default function ScreeningQuestionsManager({
     updateQuestions(ordered);
 
     if (persistToApi && jobId !== "new") {
-      await handleSaveToApi(ordered);
+      await handleSaveToApi(ordered, true);
     }
   };
 
@@ -219,12 +237,21 @@ export default function ScreeningQuestionsManager({
   };
 
   const handleDeleteQuestion = async (index: number) => {
+    if (jobId !== "new" && persistToApi) {
+      setDeletePromptIndex(index);
+      return;
+    }
+    await executeDelete(index);
+  };
+
+  const executeDelete = async (index: number) => {
     const updated = applySortOrders(questions.filter((_, i) => i !== index));
     updateQuestions(updated);
     if (editingIndex === index) closeQuestionForm();
     else if (editingIndex !== null && editingIndex > index) {
       setEditingIndex(editingIndex - 1);
     }
+    setDeletePromptIndex(null);
 
     if (persistToApi && jobId !== "new") {
       await handleSaveToApi(updated);
@@ -240,6 +267,10 @@ export default function ScreeningQuestionsManager({
     const base = getDragHandleProps(index, interactionsLocked);
     return {
       ...base,
+      onDragStart: (e: React.DragEvent) => {
+        setDraggedIndex(index);
+        base.onDragStart(e);
+      },
       onDragOver: (e: React.DragEvent) => {
         e.preventDefault();
         setDropTargetIndex(index);
@@ -247,10 +278,12 @@ export default function ScreeningQuestionsManager({
       },
       onDrop: (e: React.DragEvent) => {
         setDropTargetIndex(null);
+        setDraggedIndex(null);
         base.onDrop(e);
       },
       onDragEnd: () => {
         setDropTargetIndex(null);
+        setDraggedIndex(null);
         base.onDragEnd();
       },
     };
@@ -262,7 +295,8 @@ export default function ScreeningQuestionsManager({
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-[#FF512F]" />
             Qualification Questions
           </h3>
           <div className="flex items-center gap-2 mt-0.5">
@@ -274,7 +308,7 @@ export default function ScreeningQuestionsManager({
             </p>
             {isRunningCompliance && (
               <span className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100/50">
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Spinner className="w-3 h-3 border-t-2 border-b-2 border-amber-600" />
                 <span className="text-[10px] uppercase tracking-wider font-bold">Reviewing</span>
               </span>
             )}
@@ -335,7 +369,8 @@ export default function ScreeningQuestionsManager({
                     setEditingIndex(idx);
                   }}
                   onDelete={handleDeleteQuestion}
-                  isDragTarget={dropTargetIndex === qIndex}
+                  isDragging={draggedIndex === qIndex}
+                  isDragTarget={dropTargetIndex === qIndex && draggedIndex !== qIndex}
                   dragHandleProps={(!showDragHandles || interactionsLocked) ? undefined : buildCardDragProps(qIndex)}
                 />
               )
@@ -351,6 +386,18 @@ export default function ScreeningQuestionsManager({
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={deletePromptIndex !== null}
+        onClose={() => setDeletePromptIndex(null)}
+        onConfirm={() => deletePromptIndex !== null && executeDelete(deletePromptIndex)}
+        title="Remove Qualification Question"
+        description="Are you sure you want to remove this question? This will only affect new applicants. Past applicants will retain their original screening answers."
+        confirmText="Remove Question"
+        cancelText="Cancel"
+        isLoading={isSaving}
+        variant="danger"
+      />
     </div>
   );
 }

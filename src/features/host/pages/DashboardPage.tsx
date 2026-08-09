@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Job } from "@/types/job";
 import { jobsApi } from "@/api/jobsApi";
 import { getPostNewJobHref, POST_JOB_NEW_INTENT } from "../utils/postJobWizardStorage";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import { ExternalLink, Copy, Check, Users, Video, TrendingUp, CreditCard, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 interface StatCardProps {
@@ -14,9 +14,10 @@ interface StatCardProps {
   subtext: string;
   isDark?: boolean;
   valueColor?: string;
+  icon?: React.ElementType;
 }
 
-function StatCard({ title, value, subtext, isDark = false, valueColor = "" }: StatCardProps) {
+function StatCard({ title, value, subtext, isDark = false, valueColor = "", icon: Icon }: StatCardProps) {
   const isLongValue = typeof value === "string" && value.length > 10;
   const textSizeClass = isLongValue ? "text-base md:text-lg" : "text-2xl md:text-3xl";
 
@@ -25,7 +26,10 @@ function StatCard({ title, value, subtext, isDark = false, valueColor = "" }: St
       ${isDark ? "bg-[#111827] text-white hover:bg-[#1a2333]" : "bg-white border border-gray-100 shadow-sm hover:border-gray-200 hover:shadow-md"} 
       p-2.5 md:p-3 rounded-xl flex-1 cursor-pointer transform hover:-translate-y-1 transition-all duration-300 min-w-0
     `}>
-      <span className={`text-xs uppercase tracking-widest text-gray-500 font-bold block truncate`}>{title}</span>
+      <div className="flex items-center justify-between gap-1">
+        <span className={`text-xs uppercase tracking-widest text-gray-500 font-bold block truncate`}>{title}</span>
+        {Icon && <Icon className={`w-4 h-4 shrink-0 ${isDark ? "text-amber-400" : valueColor || "text-[#FF512F]"}`} />}
+      </div>
       <div
         className={`${textSizeClass} font-bold mt-1 ${isDark ? "text-white" : (valueColor || "text-gray-900")} truncate`}
         title={value.toString()}
@@ -115,18 +119,21 @@ export function DashboardPage() {
           value={inQueue ?? 0}
           subtext={inQueue ? "Active candidates" : "No candidates waiting"}
           isDark={true}
+          icon={Users}
         />
         <StatCard
           title="Interviews Today"
           value={interviewsToday ?? 0}
           subtext={interviewsToday ? "Interviews completed" : "No interviews today"}
           valueColor="text-sky-500"
+          icon={Video}
         />
         <StatCard
           title="Pass Rate"
           value={passRate ? `${passRate}%` : "0%"}
           subtext={passRate ? "Average qualification rate" : "No data available"}
           valueColor="text-emerald-500"
+          icon={TrendingUp}
         />
         {user?.role === 'interviewer' ? (
           <StatCard
@@ -134,6 +141,7 @@ export function DashboardPage() {
             value={timezone || user?.timezone || "UTC"}
             subtext="Your session timezone"
             valueColor="text-indigo-500"
+            icon={Globe}
           />
         ) : (
           <StatCard
@@ -141,6 +149,7 @@ export function DashboardPage() {
             value={credits ?? 0}
             subtext={credits > 0 ? "Available balance" : "Purchase credits to start"}
             valueColor="text-amber-500"
+            icon={CreditCard}
           />
         )}
       </div>
@@ -195,7 +204,7 @@ export function DashboardPage() {
 
       {/* Active Jobs Summary */}
       <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-4 md:p-5 mt-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between pb-3 mb-1 border-b border-gray-100">
           <div>
             <h3 className="text-lg font-black text-[#FF512F] mt-0.5 tracking-tight">Active Jobs</h3>
           </div>
@@ -204,7 +213,7 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-gray-100">
           {isLoadingJobs ? (
             Array.from({ length: 7 }).map((_, i) => (
               <div key={`skeleton-${i}`} className="py-3 flex items-center justify-between -mx-4 px-4 rounded-lg min-w-0 animate-pulse">
@@ -240,10 +249,10 @@ export function DashboardPage() {
               <Link
                 to={`${basePath}/jobs/${job.id}`}
                 key={job.id}
-                className="py-3 flex items-center justify-between hover:bg-gray-50 -mx-4 px-4 rounded-lg transition-colors cursor-pointer min-w-0"
+                className="py-3 flex items-center justify-between hover:bg-orange-50/50 -mx-4 px-4 rounded-lg transition-colors cursor-pointer min-w-0 group"
               >
                 <div className="min-w-0 flex-1 pr-4">
-                  <div className="font-bold text-gray-900 text-sm md:text-base truncate">{job.title}</div>
+                  <div className="font-bold text-gray-900 text-sm md:text-base truncate group-hover:text-[#FF512F] transition-colors">{job.title}</div>
                   <div className="text-xs text-gray-500 font-medium flex items-center gap-2 mt-0.5 truncate">
                     <span>{job.location}</span>
                     <span>•</span>
@@ -251,7 +260,10 @@ export function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="bg-[#FFEBEB] text-[#FF3B30] text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <div className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1 transition-all shadow-2xs ${(job.queueCount || 0) > 0
+                    ? "bg-orange-100 text-[#FF512F] border-orange-300 animate-pulse font-extrabold"
+                    : "bg-orange-50/80 text-[#FF512F] border-orange-200/80"
+                    }`}>
                     <span>{job.queueCount || 0}</span> WAITING
                   </div>
                 </div>
