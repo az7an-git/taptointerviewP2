@@ -18,6 +18,8 @@ import {
 } from "../../utils/queueEntryStatus";
 import { PendingOutcomeBannerSkeleton } from "./queuePanelSkeletons";
 
+import { AttributedNotesSection } from "./AttributedNotesSection";
+
 const OUTCOME_OPTIONS: {
     value: QueueEntryOutcome;
     icon: typeof CheckCircle;
@@ -46,7 +48,8 @@ export function InterviewOutcomeModal({
 }: InterviewOutcomeModalProps) {
     const [selected, setSelected] = useState<QueueEntryOutcome | null>(null);
     const [rating, setRating] = useState<number | null>(null);
-    const [internalNotes, setInternalNotes] = useState("");
+    const [noteText, setNoteText] = useState("");
+    const [localNotes, setLocalNotes] = useState(candidate.interviewNotes || []);
 
     const name = getParticipantDisplayName(candidate.participant);
 
@@ -54,9 +57,10 @@ export function InterviewOutcomeModal({
         if (isOpen) {
             setSelected(null);
             setRating(null);
-            setInternalNotes("");
+            setNoteText("");
+            setLocalNotes(candidate.interviewNotes || []);
         }
-    }, [isOpen]);
+    }, [isOpen, candidate]);
 
     useBodyScrollLock(isOpen);
 
@@ -67,7 +71,7 @@ export function InterviewOutcomeModal({
         onConfirm({
             outcome: selected,
             rating,
-            internal_notes: internalNotes.trim() || null,
+            note: noteText.trim() || null,
         });
     };
 
@@ -79,7 +83,7 @@ export function InterviewOutcomeModal({
             }}
         >
             <div
-                className="bg-white w-full sm:max-w-md max-h-[92dvh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col min-w-0"
+                className="bg-white w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col min-w-0"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="h-1 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] shrink-0" />
@@ -87,7 +91,7 @@ export function InterviewOutcomeModal({
                 <div className="flex items-start justify-between gap-3 p-4 sm:p-6 border-b border-gray-100 shrink-0">
                     <div className="min-w-0 flex-1 pr-2">
                         <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">
-                            Record Outcome
+                            Record Interview Outcome
                         </h2>
                         <p
                             className="text-xs sm:text-sm text-gray-500 font-medium mt-1 truncate"
@@ -107,13 +111,13 @@ export function InterviewOutcomeModal({
                     </button>
                 </div>
 
-                <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto flex-1 min-h-0">
-                    <div className="flex items-start gap-2.5 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 sm:px-3.5 sm:py-3">
-                        <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <p className="text-xs text-gray-500 font-medium leading-relaxed">
-                            Save an outcome to unlock Admit Next. &ldquo;Not a Fit&rdquo; candidates
-                            cannot rejoin this job for 72 hours.
-                        </p>
+                <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+                    {/* Employer Operational Guidance Banner 4: Required Outcome Step */}
+                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/90 px-3.5 py-3 text-left">
+                        <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="text-xs text-amber-900 leading-relaxed font-medium">
+                            <strong>Mandatory Step:</strong> Recording an outcome is required before calling the next candidate. This ensures structured candidate evaluations and maintains a clean queue workflow.
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -216,21 +220,27 @@ export function InterviewOutcomeModal({
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="internal-notes"
-                                    className="text-xs font-bold text-gray-700 uppercase tracking-wider"
-                                >
-                                    Internal Notes{" "}
+                            {/* Attributed Interview Notes Section */}
+                            <div className="space-y-2 pt-2">
+                                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Outcome Note{" "}
                                     <span className="font-medium text-gray-400 normal-case">(optional)</span>
                                 </label>
                                 <textarea
-                                    id="internal-notes"
-                                    value={internalNotes}
-                                    onChange={(e) => setInternalNotes(e.target.value.slice(0, 5000))}
-                                    rows={3}
-                                    placeholder="Notes visible only to your team..."
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF512F]/30 focus:border-[#FF512F]/50 resize-y min-h-[72px]"
+                                    value={noteText}
+                                    onChange={(e) => setNoteText(e.target.value)}
+                                    rows={2}
+                                    placeholder="Add notes for this outcome..."
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#FF512F] focus:border-[#FF512F]"
+                                />
+                            </div>
+
+                            <div className="pt-3 border-t border-gray-100">
+                                <AttributedNotesSection
+                                    jobId={candidate.queueEntryId ? candidate.queueEntryId : ""}
+                                    queueEntryId={candidate.queueEntryId}
+                                    notes={localNotes}
+                                    onNotesUpdated={(updated) => setLocalNotes(updated)}
                                 />
                             </div>
                         </>

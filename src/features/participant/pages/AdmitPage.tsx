@@ -216,6 +216,14 @@ export default function AdmitPage() {
                 </p>
               </div>
 
+              {/* Candidate Guidance Banner 4 */}
+              <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 text-left flex items-start gap-2.5 shadow-sm">
+                <BellRing className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
+                  <strong>Response Window:</strong> You have 90 seconds to click "Confirm Admission". If you miss this turn, you will be placed at the back of the line. Missing two consecutive turns will forfeit your queue position.
+                </p>
+              </div>
+
               {/* Countdown ring */}
               <div className="flex justify-center">
                 <div className={`text-4xl font-black tabular-nums transition-colors ${isExpired ? "text-red-500" : secondsLeft !== null && secondsLeft <= 20 ? "text-red-400" : "text-[#FF512F]"}`}>

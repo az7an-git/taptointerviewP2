@@ -36,6 +36,8 @@ import { WindowClosingWarningBanner } from "./WindowClosingWarningBanner";
 import { RecruiterRequestModal } from "./RecruiterRequestModal";
 import { WindowRequestsInboxModal } from "./WindowRequestsInboxModal";
 
+import { useCandidateReadyAlerts } from "@/hooks/useCandidateReadyAlerts";
+
 export function JobQueueCard({
     job,
     onWindowExpired,
@@ -94,14 +96,24 @@ export function JobQueueCard({
 
     const candidates = useMemo(() => {
         if (!localApplicants) return [];
-        return [...localApplicants].sort(
-            (a, b) => queueStatusSortWeight(a.status) - queueStatusSortWeight(b.status)
-        );
+        const activeStatuses = ["waiting", "called", "admitted", "confirmed", "in_session", "pending_outcome"];
+        return [...localApplicants]
+            .filter((c) => activeStatuses.includes(normalizeQueueStatus(c.status)))
+            .sort(
+                (a, b) => queueStatusSortWeight(a.status) - queueStatusSortWeight(b.status)
+            );
     }, [localApplicants]);
 
     const nextCandidate = candidates.find(
         (c) => normalizeQueueStatus(c.status) === "waiting"
     );
+
+    // Candidate Ready Alerts hook
+    const isCandidateReady = Boolean(nextCandidate && (normalizeQueueStatus(nextCandidate.status) === "waiting" || normalizeQueueStatus(nextCandidate.status) === "admitted"));
+    useCandidateReadyAlerts({
+        isCandidateReady,
+        jobTitle: job.title,
+    });
     const waitingCount = candidates.filter(c => normalizeQueueStatus(c.status) === "waiting").length;
     const admitBlocked = candidates.some((c) => blocksAdmitNext(c.status));
     const sessionCandidate = findSessionCandidate(localApplicants);
@@ -418,7 +430,10 @@ export function JobQueueCard({
                                 ? `Admit Next: ${admitNextShortName}`
                                 : undefined)
                         }
-                        className="w-full sm:w-auto sm:min-w-0 sm:max-w-[240px] md:max-w-[280px] bg-[#FF512F] text-white hover:bg-[#E64A2E] px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 overflow-hidden"
+                        className={`w-full sm:w-auto sm:min-w-0 sm:max-w-[240px] md:max-w-[280px] text-white hover:bg-[#E64A2E] px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 overflow-hidden ${isCandidateReady && !admitBlocked && !isQueuePaused
+                            ? "animate-pulse shadow-lg shadow-[#FF512F]/40 border-2 border-orange-400 ring-2 ring-[#FF512F]/30 bg-gradient-to-r from-[#FF512F] to-[#FF7A00]"
+                            : "bg-[#FF512F]"
+                            }`}
                     >
                         {isAdmitting ? (
                             <Spinner className="w-4 h-4 border-2 border-white/30 border-t-white shrink-0" />
@@ -430,6 +445,16 @@ export function JobQueueCard({
                     </button>
                 </div>
             </div>
+
+            {/* Employer Operational Guidance Banner 2: 90-Second Countdown Explanation */}
+            {candidates.some((c) => normalizeQueueStatus(c.status) === "called") && (
+                <div className="mx-3 sm:mx-4 mt-3 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50/90 px-3.5 py-3 text-left shadow-2xs">
+                    <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div className="text-xs text-blue-900 leading-relaxed font-medium">
+                        <strong>90-Second Candidate Countdown:</strong> Candidates have 90 seconds to respond to their admission notification. If missed, they are moved to the back of the queue (or returned to pool), and your interview credit is protected/refunded automatically.
+                    </div>
+                </div>
+            )}
 
             {/* 15-Minute Warning Banner */}
             {minutesRemaining !== null && minutesRemaining > 0 && (
@@ -445,12 +470,27 @@ export function JobQueueCard({
                 />
             )}
 
+            {/* Employer Operational Guidance Banner 3: Queue Inactivity Pauses */}
             {isQueuePaused && (
-                <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-left">
-                    <PauseCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium text-amber-800">
-                        Queue is paused. Resume it from the job page before calling the next candidate.
-                    </p>
+                <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 flex items-start justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-left shadow-2xs">
+                    <div className="flex items-start gap-2.5">
+                        <PauseCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-xs font-bold text-amber-900">Queue Inactivity Pause Active</p>
+                            <p className="text-xs font-medium text-amber-800/90 mt-0.5 leading-relaxed">
+                                Waiting candidates remain protected in line during an inactivity pause. Click Resume to open admissions and call waiting candidates.
+                            </p>
+                        </div>
+                    </div>
+                    {isAdmin && (
+                        <button
+                            type="button"
+                            onClick={() => jobsApi.updateQueueWindowStatus(job.id, "open").then(() => onSessionChange?.())}
+                            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-all shadow-xs shrink-0 cursor-pointer"
+                        >
+                            Resume Queue
+                        </button>
+                    )}
                 </div>
             )}
 

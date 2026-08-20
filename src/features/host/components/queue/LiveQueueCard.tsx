@@ -176,6 +176,7 @@ export default function LiveQueueCard({
           applicant={selectedApplicant}
           isOpen={!!selectedApplicant}
           onClose={() => setSelectedApplicant(null)}
+          readOnly={true}
         />
       </div>
     );

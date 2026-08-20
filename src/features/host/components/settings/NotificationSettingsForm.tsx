@@ -34,6 +34,8 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
     // Preference states
     const [followMe, setFollowMe] = useState(false);
     const [savedFollowMe, setSavedFollowMe] = useState(false);
+    const [candidateReadyAlerts, setCandidateReadyAlerts] = useState(true);
+    const [savedCandidateReadyAlerts, setSavedCandidateReadyAlerts] = useState(true);
     const [emailChannelActive, setEmailChannelActive] = useState(false);
     const [smsChannelActive, setSmsChannelActive] = useState(false);
     const [isSavingPreferences, setIsSavingPreferences] = useState(false);
@@ -46,6 +48,9 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
             // Consent is never pre-filled — user must explicitly check it each session
             setFollowMe(data.follow_me_enabled || false);
             setSavedFollowMe(data.follow_me_enabled || false);
+            const readyAlerts = data.candidate_ready_alerts_enabled !== undefined ? data.candidate_ready_alerts_enabled : true;
+            setCandidateReadyAlerts(readyAlerts);
+            setSavedCandidateReadyAlerts(readyAlerts);
 
             const verified = Boolean(data.phone_verified_at);
             setIsPhoneVerified(verified);
@@ -190,6 +195,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
         try {
             await authService.updateNotificationSettings({
                 follow_me_enabled: followMe,
+                candidate_ready_alerts_enabled: candidateReadyAlerts,
             });
             toast.success("Notification preferences saved successfully.");
             await fetchSettings();
@@ -423,6 +429,19 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
 
                             <label className="flex items-center justify-between gap-3 p-2.5 bg-white border border-gray-200 rounded-lg cursor-pointer select-none">
                                 <div className="flex-1 min-w-0">
+                                    <span className="text-xs font-bold text-gray-800 block">Candidate Ready Audio & Tab Alerts</span>
+                                    <p className="text-xs text-gray-500 font-medium leading-tight mt-0.5">Play sound chime and flash browser tab when a candidate is ready</p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={candidateReadyAlerts}
+                                    onChange={(e) => setCandidateReadyAlerts(e.target.checked)}
+                                    className="rounded border-gray-300 bg-white text-[#FF512F] focus:ring-[#FF512F] h-4 w-4 cursor-pointer flex-shrink-0 self-center"
+                                />
+                            </label>
+
+                            <label className="flex items-center justify-between gap-3 p-2.5 bg-white border border-gray-200 rounded-lg cursor-pointer select-none">
+                                <div className="flex-1 min-w-0">
                                     <span className="text-xs font-bold text-gray-800 block">Follow Me Alerts</span>
                                     <p className="text-xs text-gray-500 font-medium leading-tight mt-0.5">Get join alerts when candidates enter the waiting room</p>
                                 </div>
@@ -440,7 +459,7 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                         type="button"
                         variant="secondary"
                         onClick={handleSavePreferences}
-                        disabled={isSavingPreferences || followMe === savedFollowMe}
+                        disabled={isSavingPreferences || (followMe === savedFollowMe && candidateReadyAlerts === savedCandidateReadyAlerts)}
                         className="w-full justify-center gap-1.5 text-xs py-2 h-9 cursor-pointer font-bold"
                     >
                         {isSavingPreferences ? (

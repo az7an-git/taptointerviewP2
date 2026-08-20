@@ -148,7 +148,7 @@ export default function JobsPage() {
   const isRefreshing = isLoading && jobs.length > 0;
 
   return (
-    <div className="space-y-6 animate-page-fade-in">
+    <div className="space-y-6 pb-4 md:pb-6 animate-page-fade-in">
       {/* Header Section */}
       <PageHeader
         tag="All Job Postings"

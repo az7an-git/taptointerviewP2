@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Archive, Edit, Briefcase, RotateCcw } from "lucide-react";
+import { ArrowLeft, Archive, Edit, Briefcase, RotateCcw, Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import PageHeader from "@/common/ui/PageHeader";
 import { Spinner } from "@/common/ui/Spinner";
@@ -47,6 +47,11 @@ export default function JobDetailPage() {
       raw: app,
     }));
   }, [job?.applicants]);
+
+  const activeCandidatesCount = useMemo(() => {
+    const activeStatuses = ["waiting", "called", "admitted", "confirmed", "in_session", "pending_outcome"];
+    return candidates.filter((c) => activeStatuses.includes(c.raw?.status?.toLowerCase() || "")).length;
+  }, [candidates]);
 
   useEffect(() => {
     const fetchJobDetails = async () => {
@@ -250,11 +255,28 @@ export default function JobDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div
-          className="min-h-0 w-full flex flex-col overflow-hidden order-2 lg:order-1"
+          className="min-h-0 w-full flex flex-col gap-4 overflow-hidden order-2 lg:order-1"
           style={
             queuePanelHeight != null ? { height: queuePanelHeight } : undefined
           }
         >
+          {/* Empty Queue Banner Card */}
+          {job.status === "Active" &&
+            (getLiveQueueState(job.queueWindows || []) === "open" || getLiveQueueState(job.queueWindows || []) === "wrapping_up") &&
+            activeCandidatesCount === 0 && (
+              <div className="bg-blue-50/50 border border-blue-200/80 rounded-xl p-4 shadow-sm flex items-start gap-3 text-left animate-in fade-in slide-in-from-top-2 duration-300 ease-out">
+                <div className="p-2 bg-blue-100/80 rounded-xl text-blue-600 shrink-0 shadow-2xs">
+                  <Info className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <h4 className="font-bold text-blue-950 text-sm mb-0.5 tracking-tight">Live Queue Running</h4>
+                  <p className="text-xs font-semibold text-blue-800 leading-relaxed">
+                    <strong>Live Queue:</strong> Your job listing is live. Qualified candidates who complete screening will automatically appear in the waiting room list below in real time.
+                  </p>
+                </div>
+              </div>
+            )}
+
           <LiveQueueCard
             job={job}
             candidates={candidates}
