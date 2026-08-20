@@ -59,7 +59,7 @@ export function OtpInput({
       {/* Visual boxes */}
       <div
         role="presentation"
-        className="grid grid-cols-6 gap-1.5 w-full min-w-0"
+        className="grid grid-cols-6 gap-1 sm:gap-2 w-full min-w-0"
       >
         {digits.map((digit, index) => {
           const isCurrentDigitFocused =

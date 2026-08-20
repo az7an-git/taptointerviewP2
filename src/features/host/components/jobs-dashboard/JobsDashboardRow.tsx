@@ -26,12 +26,21 @@ const getJobInitials = (title: string) => {
   return title.trim().slice(0, 2).toUpperCase() || "?";
 };
 
+const getStatusBorderClass = (status?: string) => {
+  const s = status?.toLowerCase() ?? "";
+  if (s === "active") return "border-l-3 border-l-emerald-400";
+  if (s === "draft") return "border-l-3 border-l-blue-400";
+  if (s === "paused") return "border-l-3 border-l-amber-400";
+  if (s === "closed") return "border-l-3 border-l-red-400";
+  return "border-l-3 border-l-gray-300";
+};
+
 export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRowProps) {
   const jobHref = getJobDetailHref(basePath, job);
   const editHref = isDraftJob(job.status) ? jobHref : `${basePath}/jobs/${job.id}/edit`;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-3 md:p-4 shadow-sm hover:border-gray-200 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4 group overflow-hidden">
+    <div className={`bg-white border border-gray-100 ${getStatusBorderClass(job.status)} rounded-xl p-3 md:p-4 shadow-sm hover:border-gray-200 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4 group overflow-hidden`}>
       {/* Job Info */}
       <Link
         to={jobHref}
@@ -100,7 +109,7 @@ export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRow
               <Link
                 to={editHref}
                 state={isDraftJob(job.status) ? undefined : { from: "list" }}
-                className="h-10 w-10 flex items-center justify-center border border-gray-100 hover:border-gray-200 hover:bg-gray-50 rounded-lg text-gray-500 hover:text-gray-900 transition-all cursor-pointer touch-manipulation"
+                className="h-9 w-9 flex items-center justify-center border border-gray-200/80 bg-white hover:bg-orange-50/80 hover:border-orange-300 hover:text-[#FF512F] rounded-lg text-gray-600 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 touch-manipulation"
                 title={isDraftJob(job.status) ? "Continue draft" : "Edit Job"}
               >
                 <Edit className="w-4 h-4" />
@@ -111,7 +120,7 @@ export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRow
                   e.stopPropagation();
                   onCloseJob(job.id);
                 }}
-                className="h-10 w-10 flex items-center justify-center border border-gray-100 hover:border-red-200 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-600 transition-all cursor-pointer touch-manipulation"
+                className="h-9 w-9 flex items-center justify-center border border-gray-200/80 bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-600 rounded-lg text-gray-600 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 touch-manipulation"
                 title="Close Job"
               >
                 <Archive className="w-4 h-4" />
@@ -119,7 +128,7 @@ export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRow
             </div>
           ) : (
             <div className="hidden md:flex items-center justify-end shrink-0 md:w-24">
-              <span className="text-xs text-gray-400 font-bold px-2 py-1 select-none">
+              <span className="text-[11px] font-bold text-gray-400 bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-full select-none shadow-2xs">
                 Read Only
               </span>
             </div>
@@ -131,7 +140,7 @@ export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRow
             <Link
               to={editHref}
               state={isDraftJob(job.status) ? undefined : { from: "list" }}
-              className="h-11 min-w-[88px] px-4 flex items-center justify-center gap-2 border border-gray-100 hover:border-gray-200 hover:bg-gray-50 rounded-lg text-gray-600 hover:text-gray-900 text-sm font-bold transition-all cursor-pointer touch-manipulation"
+              className="h-10 min-w-[88px] px-4 flex items-center justify-center gap-2 border border-gray-200/80 bg-white hover:bg-orange-50/80 hover:border-orange-300 rounded-lg text-gray-700 hover:text-[#FF512F] text-sm font-semibold transition-all cursor-pointer shadow-2xs touch-manipulation"
               title={isDraftJob(job.status) ? "Continue draft" : "Edit Job"}
             >
               <Edit className="w-4 h-4 shrink-0" />
@@ -143,7 +152,7 @@ export function JobsDashboardRow({ job, basePath, onCloseJob }: JobsDashboardRow
                 e.stopPropagation();
                 onCloseJob(job.id);
               }}
-              className="h-11 min-w-[88px] px-4 flex items-center justify-center gap-2 border border-red-100 hover:border-red-200 hover:bg-red-50 rounded-lg text-red-600 text-sm font-bold transition-all cursor-pointer touch-manipulation"
+              className="h-10 min-w-[88px] px-4 flex items-center justify-center gap-2 border border-red-200/80 bg-white hover:bg-red-50 hover:border-red-300 rounded-lg text-red-600 text-sm font-semibold transition-all cursor-pointer shadow-2xs touch-manipulation"
               title="Close Job"
             >
               <Archive className="w-4 h-4 shrink-0" />

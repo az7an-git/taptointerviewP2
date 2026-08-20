@@ -7,7 +7,6 @@ import {
   Phone,
   Clock,
   Star,
-  FileText,
   CheckCircle,
   HelpCircle,
 } from "lucide-react";
@@ -16,12 +15,14 @@ import { JobApplicant } from "@/types/job";
 import { Spinner } from "@/common/ui/Spinner";
 import { jobsApi } from "@/api/jobsApi";
 import { getStatusColors, getOutcomeColors } from "../../utils/badgeColors";
+import { AttributedNotesSection } from "./AttributedNotesSection";
 
 interface ApplicantDetailsModalProps {
   jobId?: string;
   applicant: JobApplicant | null;
   isOpen: boolean;
   onClose: () => void;
+  readOnly?: boolean;
 }
 
 export function ApplicantDetailsModal({
@@ -29,6 +30,7 @@ export function ApplicantDetailsModal({
   applicant,
   isOpen,
   onClose,
+  readOnly = false,
 }: ApplicantDetailsModalProps) {
   useBodyScrollLock(isOpen);
 
@@ -208,15 +210,17 @@ export function ApplicantDetailsModal({
             </div>
           </div>
 
-          {/* Internal Notes */}
+          {/* Chronological Attributed Interview Notes */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              Internal Notes
-            </h3>
-            <p className="text-xs text-gray-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-gray-150 min-h-[60px] whitespace-pre-wrap break-words">
-              {currentApplicant.internalNotes || "No notes captured for this candidate yet."}
-            </p>
+            <AttributedNotesSection
+              jobId={jobId || ""}
+              queueEntryId={currentApplicant.queueEntryId}
+              notes={currentApplicant.interviewNotes || []}
+              onNotesUpdated={(updated) => {
+                setDetailedApplicant((prev) => (prev ? { ...prev, interviewNotes: updated } : prev));
+              }}
+              readOnly={readOnly}
+            />
           </div>
 
           {/* Screening Questions Answers if any */}

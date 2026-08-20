@@ -1,4 +1,4 @@
-import { /*Filter ,*/Briefcase, Search, X } from "lucide-react";
+import { Briefcase, Search, X, Filter } from "lucide-react";
 import Select from "@/common/components/ui/Select";
 
 const STATUS_FILTER_OPTIONS = [
@@ -90,11 +90,11 @@ export function JobsSearchFilters({
         <div className="w-[calc(50%-0.5rem)] lg:w-44 lg:shrink-0">
           <Select
             label="Status"
+            icon={Filter}
             options={STATUS_FILTER_OPTIONS}
             value={statusFilter}
             onChange={onStatusFilterChange}
             placeholder="All statuses"
-            className="[&_label]:mb-1"
           />
         </div>
         <div className="w-[calc(50%-0.5rem)] lg:w-44 lg:shrink-0">
@@ -105,7 +105,6 @@ export function JobsSearchFilters({
             value={employmentTypeFilter}
             onChange={onEmploymentTypeFilterChange}
             placeholder="All types"
-            className="[&_label]:mb-1"
           />
         </div>
       </div>
