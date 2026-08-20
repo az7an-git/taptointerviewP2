@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -42,14 +42,17 @@ export default function ParticipantJobDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<any | null>(null);
   const [companyName, setCompanyName] = useState("");
+  const isFetchingRef = useRef(false);
 
   const loadJobDetails = useCallback(async (silent = false) => {
+    if (isFetchingRef.current) return;
     if (!slug || !jobId) {
       setError("Job not found.");
       if (!silent) setIsLoading(false);
       return;
     }
 
+    isFetchingRef.current = true;
     try {
       const response = await jobsApi.getJobDetailsByCompany(slug, jobId);
       if (response.status === "success" && response.data?.job) {
@@ -61,13 +64,26 @@ export default function ParticipantJobDetailPage() {
         localStorage.setItem("selectedJobTitle", loadedJob.title || "");
         localStorage.setItem("selectedCompanySlug", slug);
         localStorage.setItem("selectedCompanyName", name);
+
+        if (!silent) {
+          const viewRecordedKey = `view_recorded_${jobId}`;
+          if (!sessionStorage.getItem(viewRecordedKey)) {
+            sessionStorage.setItem(viewRecordedKey, "true");
+            void jobsApi.recordJobView(slug, jobId).catch(() => {
+              sessionStorage.removeItem(viewRecordedKey);
+            });
+          }
+        }
       } else {
         throw new Error("Failed to load job");
       }
-    } catch (err) {
-      console.error("Failed to load job details", err);
-      setError("Unable to load this position. Please try again.");
+    } catch (err: any) {
+      const backendMessage = err?.response?.data?.message;
+      if (backendMessage) {
+        setError(backendMessage);
+      }
     } finally {
+      isFetchingRef.current = false;
       if (!silent) setIsLoading(false);
     }
   }, [slug, jobId]);

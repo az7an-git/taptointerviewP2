@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, Users, ShieldCheck, Zap, PauseCircle, CheckCircle, Video, BellRing, XCircle } from "lucide-react";
+import { Clock, Users, ShieldCheck, Zap, PauseCircle, CheckCircle, Video, BellRing, XCircle, X } from "lucide-react";
 import publicApi from "@/api/publicApi";
 import { jobsApi } from "@/api/jobsApi";
 import { ParticipantHeader, ParticipantFooter } from "../components";
@@ -66,6 +66,7 @@ export default function QueueStatusPage() {
   const [queueData, setQueueData] = useState<QueueStatusData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDismissibleAlert, setShowDismissibleAlert] = useState(true);
   const queueEntryId = useMemo(() => localStorage.getItem("queue_entry_id"), []);
   const jobId = useMemo(() => localStorage.getItem("selectedJobId"), []);
 
@@ -546,6 +547,36 @@ export default function QueueStatusPage() {
                   </div>
                 )}
 
+                {/* Candidate Guidance Banner 1: Queue Entry Screen Guidance */}
+                {!loading && queueData && position !== null && (
+                  <div className="max-w-xl mx-auto bg-blue-500/10 border border-blue-500/25 rounded-xl p-3.5 flex items-start gap-3 text-left shadow-sm">
+                    <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-200/90 leading-relaxed font-medium">
+                      <strong>Queue Position Confirmed:</strong> You are currently at <strong>position #{position}</strong> in line. Stay on this page, we will alert you via SMS and/or email as soon as your turn arrives.
+                    </p>
+                  </div>
+                )}
+
+                {/* Candidate Guidance Banner 3: Dismissible Waiting Room Reminder */}
+                {showDismissibleAlert && (
+                  <div className="max-w-xl mx-auto bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 flex items-start justify-between gap-3 text-left shadow-sm animate-fade-in">
+                    <div className="flex items-start gap-2.5">
+                      <BellRing className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
+                        <strong>Waiting Room Guidance:</strong> Keep this window open and watch closely for incoming SMS or email alerts so you can respond immediately when called.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowDismissibleAlert(false)}
+                      className="text-amber-400/80 hover:text-amber-200 p-0.5 rounded-md hover:bg-amber-500/20 transition-colors cursor-pointer"
+                      aria-label="Dismiss banner"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
                 {/* Stats Row */}
                 {!loading && queueData && (
                   <>
@@ -600,7 +631,7 @@ export default function QueueStatusPage() {
                       Important Notice
                     </p>
                     <p className="text-xs font-medium text-gray-500 mt-0.5">
-                      When it's your turn, you will receive an email with your secure admission link. You
+                      When it's your turn, you will receive an SMS and/or email notification with your secure admission link. You
                       will have 90 seconds to click the link and confirm your spot.
                     </p>
                   </div>
