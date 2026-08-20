@@ -5,7 +5,17 @@ import { Toaster } from "sonner";
 export default function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-right" expand={false} theme="dark" richColors />
+      <Toaster
+        position="top-right"
+        expand={false}
+        theme="dark"
+        richColors
+        toastOptions={{
+          style: {
+            maxWidth: "calc(100vw - 32px)",
+          },
+        }}
+      />
       <AppRoutes />
     </AuthProvider>
   );

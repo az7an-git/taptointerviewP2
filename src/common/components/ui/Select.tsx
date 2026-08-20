@@ -15,6 +15,7 @@ interface SelectProps {
   placeholder?: string;
   error?: string;
   className?: string;
+  buttonClassName?: string;
   variant?: "default" | "ghost";
   /** Screen-reader only label; hides the visible uppercase label (e.g. inline table rows). */
   hideLabel?: boolean;
@@ -30,6 +31,7 @@ export default function Select({
   placeholder = "Select option...",
   error,
   className = "",
+  buttonClassName = "",
   variant = "default",
   hideLabel = false,
   disabled = false,
@@ -80,7 +82,7 @@ export default function Select({
               setIsOpen(!isOpen);
             }
           }}
-          className={`w-full px-4 py-2.5 transition-all duration-200 flex items-center justify-between group rounded-xl shadow-sm min-w-0 ${disabled ? "cursor-not-allowed opacity-60 pointer-events-none" : "cursor-pointer"} ${isGhost
+          className={`w-full px-4 ${buttonClassName || "py-2"} transition-all duration-200 flex items-center justify-between group rounded-xl shadow-sm min-w-0 ${disabled ? "cursor-not-allowed opacity-60 pointer-events-none" : "cursor-pointer"} ${isGhost
             ? `bg-white/5 border ${isOpen ? 'border-orange-500 ring-1 ring-orange-500' : 'border-white/10 hover:border-white/20'} text-white`
             : `bg-gray-50/50 border ${isOpen ? 'border-[#FF512F] bg-white shadow-[0_0_0_4px_rgba(255,81,47,0.1)]' : error ? 'border-red-500' : 'border-gray-300 hover:border-gray-400 hover:bg-white'} text-gray-900`
             }`}

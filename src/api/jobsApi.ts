@@ -25,6 +25,8 @@ import {
   JobWithMetricsResponse,
   LiveScreeningQuestionInput,
   LiveScreeningQuestionResponse,
+  PhoneVerificationStatus,
+  NotificationSettings,
 } from "@/types/job";
 
 const mapScreeningOptionFromBackend = (opt: any): ScreeningQuestionOption => ({
@@ -107,6 +109,7 @@ const mapApplicantFromBackend = (a: any): JobApplicant => {
     outcome: a.outcome ?? null,
     rating: a.rating !== undefined && a.rating !== null ? Number(a.rating) : null,
     internalNotes: a.internal_notes ?? null,
+    interviewNotes: a.interview_notes || [],
     screeningAnswers: (a.screening_answers || [])
       .map(mapScreeningAnswerFromBackend)
       .sort((x: ScreeningAnswer, y: ScreeningAnswer) => x.sortOrder - y.sortOrder),
@@ -893,5 +896,114 @@ export const jobsApi = {
       status: response.data.status,
       data: mapToFrontend(response.data.data),
     };
+  },
+
+  /* ==========================================================================
+     Milestone 4 API Endpoints (Candidate Verification & Settings)
+     ========================================================================== */
+
+  /**
+   * 1. Request phone OTP
+   * POST /jobs/company/:companySlug/:jobId/phone-verification/request
+   * Authorization: Bearer <screening_token>
+   */
+  requestPhoneVerification: async (
+    companySlug: string,
+    jobId: string,
+    phone: string,
+    screeningToken: string
+  ) => {
+    const response = await publicApi.post<{
+      status: string;
+      data: PhoneVerificationStatus;
+    }>(
+      `/jobs/company/${companySlug}/${jobId}/phone-verification/request`,
+      { phone },
+      { headers: { Authorization: `Bearer ${screeningToken}` } }
+    );
+    return response.data;
+  },
+
+  /**
+   * 2. Resend OTP
+   * POST /jobs/company/:companySlug/:jobId/phone-verification/resend
+   * Authorization: Bearer <screening_token>
+   */
+  resendPhoneVerification: async (
+    companySlug: string,
+    jobId: string,
+    screeningToken: string
+  ) => {
+    const response = await publicApi.post<{
+      status: string;
+      data: PhoneVerificationStatus;
+    }>(
+      `/jobs/company/${companySlug}/${jobId}/phone-verification/resend`,
+      {},
+      { headers: { Authorization: `Bearer ${screeningToken}` } }
+    );
+    return response.data;
+  },
+
+  /**
+   * 3. Verify OTP
+   * POST /jobs/company/:companySlug/:jobId/phone-verification/verify
+   * Authorization: Bearer <screening_token>
+   */
+  verifyPhoneCode: async (
+    companySlug: string,
+    jobId: string,
+    code: string,
+    screeningToken: string
+  ) => {
+    const response = await publicApi.post<{
+      status: string;
+      data: PhoneVerificationStatus;
+    }>(
+      `/jobs/company/${companySlug}/${jobId}/phone-verification/verify`,
+      { code },
+      { headers: { Authorization: `Bearer ${screeningToken}` } }
+    );
+    return response.data;
+  },
+
+  /**
+   * 4. Check verification status
+   * GET /jobs/company/:companySlug/:jobId/phone-verification/status
+   * Authorization: Bearer <screening_token>
+   */
+  getPhoneVerificationStatus: async (
+    companySlug: string,
+    jobId: string,
+    screeningToken: string
+  ) => {
+    const response = await publicApi.get<{
+      status: string;
+      data: PhoneVerificationStatus;
+    }>(`/jobs/company/${companySlug}/${jobId}/phone-verification/status`, {
+      headers: { Authorization: `Bearer ${screeningToken}` },
+    });
+    return response.data;
+  },
+
+  /**
+   * 7. Employer notification settings
+   * GET /auth/notification-settings
+   * PUT /auth/notification-settings
+   */
+  getNotificationSettings: async () => {
+    const response = await authApi.get<{
+      status: string;
+      data: NotificationSettings;
+    }>("/auth/notification-settings");
+    return response.data;
+  },
+
+  updateNotificationSettings: async (settings: Partial<NotificationSettings>) => {
+    const response = await authApi.put<{
+      status: string;
+      data: NotificationSettings;
+    }>("/auth/notification-settings", settings);
+    return response.data;
   },
 };
