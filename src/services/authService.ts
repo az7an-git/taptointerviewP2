@@ -178,6 +178,7 @@ export const authService = {
 
   // PUT Notification Settings
   updateNotificationSettings: async (settings: {
+    candidate_ready_alerts_enabled?: boolean;
     follow_me_enabled?: boolean;
     sms_consent_active?: boolean;
   }) => {

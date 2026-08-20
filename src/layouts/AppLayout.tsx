@@ -12,6 +12,7 @@ import { useGlobalWindowWarning } from "@/hooks/useGlobalWindowWarning";
 import { WindowClosingWarningBanner } from "@/features/host/components/queue/WindowClosingWarningBanner";
 import { jobsApi } from "@/api/jobsApi";
 import { toast } from "sonner";
+import { RecruiterRequestModal } from "@/features/host/components/queue/RecruiterRequestModal";
 
 export default function AppLayout() {
   const { logout, user } = useAuth();
@@ -23,6 +24,27 @@ export default function AppLayout() {
   const { warning, refresh: refreshWarning } = useGlobalWindowWarning();
   const isAdmin = user?.role !== "interviewer";
   const [isWindowActionLoading, setIsWindowActionLoading] = useState(false);
+  const [recruiterRequestModalOpen, setRecruiterRequestModalOpen] = useState(false);
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+
+  const handleSubmitRecruiterRequest = async (payload: {
+    window_id: string;
+    request_type: any;
+    extend_minutes?: number;
+    note?: string;
+  }) => {
+    if (!warning?.job?.id) return;
+    setIsSubmittingRequest(true);
+    try {
+      await jobsApi.createWindowRequest(warning.job.id, payload);
+      toast.success("Window request submitted to admin!");
+      setRecruiterRequestModalOpen(false);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.data || "Failed to submit request.");
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
 
   const handleGlobalExtend = async (minutes: number) => {
     if (!warning || !warning.job.id || !warning.window.id) return;
@@ -141,8 +163,8 @@ export default function AppLayout() {
             isActionLoading={isWindowActionLoading}
             onExtend={handleGlobalExtend}
             onCloseEarly={handleGlobalCloseEarly}
-            onRequestExtension={() => navigate(`/${isAdmin ? 'admin' : 'interviewer'}/queue`)}
-            onRequestEarlyClose={() => navigate(`/${isAdmin ? 'admin' : 'interviewer'}/queue`)}
+            onRequestExtension={() => setRecruiterRequestModalOpen(true)}
+            onRequestEarlyClose={() => setRecruiterRequestModalOpen(true)}
           />
         )}
 
@@ -170,6 +192,14 @@ export default function AppLayout() {
         isOpen={isCreditsModalOpen}
         onClose={() => setIsCreditsModalOpen(false)}
         currentCredits={user?.company?.balance ?? 0}
+      />
+
+      <RecruiterRequestModal
+        isOpen={recruiterRequestModalOpen}
+        windowId={warning?.window?.id || ""}
+        isSubmitting={isSubmittingRequest}
+        onClose={() => setRecruiterRequestModalOpen(false)}
+        onSubmitRequest={handleSubmitRecruiterRequest}
       />
 
       <ConfirmationModal

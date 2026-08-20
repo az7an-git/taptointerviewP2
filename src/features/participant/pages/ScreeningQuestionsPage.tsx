@@ -16,7 +16,6 @@ export default function ScreeningQuestionsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<any[]>([]);
-  // Answers for dropdown questions store the selected index (number), text questions store a string
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [queueClosedStatus, setQueueClosedStatus] = useState<string | null>(null);
 
@@ -28,7 +27,6 @@ export default function ScreeningQuestionsPage() {
 
   const jobTitle = localStorage.getItem("selectedJobTitle") || "Candidate Interview Room";
 
-  // Dynamic Browser Tab Title for a premium white-label experience
   useEffect(() => {
     document.title = `${jobTitle} | ${companyName}`;
     return () => {
@@ -188,7 +186,7 @@ export default function ScreeningQuestionsPage() {
                   <div>
                     <h3 className="text-xs font-bold text-white uppercase tracking-wide">Join the Waiting Room</h3>
                     <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                      Submitting your answers places you directly in the waiting room. Wait times depend on live interviewer availability.
+                      Submitting your responses qualifies you to enter the live waiting room. You will be notified automatically via SMS or email when called.
                     </p>
                   </div>
                 </div>
@@ -198,9 +196,9 @@ export default function ScreeningQuestionsPage() {
                     <ArrowRight className="w-4 h-4 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wide">Next Up: Device Setup</h3>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wide">Next Up: Contact & Verification</h3>
                     <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                      Immediately after joining, you can test your video and audio devices before going live.
+                      Next, you will set up your contact details and verify your mobile phone to receive alerts when called.
                     </p>
                   </div>
                 </div>

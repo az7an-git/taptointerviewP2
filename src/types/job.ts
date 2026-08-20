@@ -78,6 +78,21 @@ export interface ScreeningAnswer {
   selectedOptionText: string;
 }
 
+export interface PhoneVerificationStatus {
+  verified_phone: string | null;
+  phone_verified_at: string | null;
+  phone_verification_pending: boolean;
+  verification_expires_at: string | null;
+  resend_available_at: string | null;
+  phone_verification_locked: boolean;
+  verification_attempts_remaining: number;
+}
+
+export interface NotificationSettings {
+  candidate_ready_alerts_enabled: boolean;
+  follow_me_enabled?: boolean;
+}
+
 export interface JobApplicant {
   queueEntryId: string;
   status: string;
@@ -90,6 +105,7 @@ export interface JobApplicant {
   outcome: QueueEntryOutcome | null;
   rating: number | null;
   internalNotes: string | null;
+  interviewNotes?: InterviewNote[];
   screeningAnswers: ScreeningAnswer[];
   roomUrl?: string;
   hostToken?: string;
@@ -101,7 +117,7 @@ export interface JobApplicant {
 export interface SaveOutcomePayload {
   outcome: QueueEntryOutcome;
   rating?: number | null;
-  internal_notes?: string | null;
+  note?: string | null;
 }
 
 export interface Job {

@@ -32,6 +32,7 @@ export interface JobRealtimeCallbacks {
   onWindowClosePrompt?: (payload: any) => void;
   onWindowRequestCreated?: (payload: any) => void;
   onWindowRequestReviewed?: (payload: any) => void;
+  onMetricsUpdate?: (payload: any) => void;
 }
 
 export function useJobRealtime(
@@ -66,7 +67,13 @@ export function useJobRealtime(
       ])
     );
 
-    return { ...queueHandlers, ...wrappedCreditHandlers };
+    const metricsHandlers = {
+      job_metrics_updated: (payload: unknown) => {
+        callbacks?.onMetricsUpdate?.(payload);
+      },
+    };
+
+    return { ...queueHandlers, ...wrappedCreditHandlers, ...metricsHandlers };
   }, [onUpdate, callbacks, setCompanyBalance]);
 
   useRealtimeChannel(jobId ? `job:${jobId}` : null, handlers, {
