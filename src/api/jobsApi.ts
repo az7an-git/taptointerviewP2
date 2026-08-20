@@ -455,7 +455,24 @@ export const jobsApi = {
     return response.data;
   },
 
-  submitScreeningAnswers: async (slug: string, jobId: string, answers: any[]) => {
+  startScreening: async (slug: string, jobId: string) => {
+    const response = await publicApi.post<{
+      status: string;
+      data: {
+        screening_attempt_id: string;
+        screening_token: string;
+        questions: any[];
+      };
+    }>(`/jobs/company/${slug}/${jobId}/screening/start`);
+    return response.data;
+  },
+
+  submitScreeningAnswers: async (
+    slug: string,
+    jobId: string,
+    answers: any[],
+    screeningToken?: string
+  ) => {
     const response = await publicApi.post<{
       status: string;
       data: {
@@ -463,7 +480,15 @@ export const jobsApi = {
         screening_attempt_id: string;
         screening_token: string;
       };
-    }>(`/jobs/company/${slug}/${jobId}/screening`, { answers });
+    }>(
+      `/jobs/company/${slug}/${jobId}/screening`,
+      { answers },
+      {
+        headers: screeningToken
+          ? { Authorization: `Bearer ${screeningToken}` }
+          : {},
+      }
+    );
     return response.data;
   },
 

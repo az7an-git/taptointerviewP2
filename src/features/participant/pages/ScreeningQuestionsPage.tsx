@@ -35,18 +35,32 @@ export default function ScreeningQuestionsPage() {
   }, [jobTitle, companyName]);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const initScreeningSession = async () => {
       if (!slug || !jobId) {
         setIsLoading(false);
         return;
       }
       try {
-        const response = await jobsApi.getJobDetailsByCompany(slug, jobId);
-        if (response.status === "success" && response.data?.job?.screening_questions) {
-          const sortedQuestions = response.data.job.screening_questions.sort(
-            (a: any, b: any) => a.sort_order - b.sort_order
+        const response = await jobsApi.startScreening(slug, jobId);
+        if (response.status === "success" && response.data) {
+          if (response.data.screening_token) {
+            localStorage.setItem("screening_token", response.data.screening_token);
+          }
+          if (response.data.screening_attempt_id) {
+            localStorage.setItem("screening_attempt_id", response.data.screening_attempt_id);
+          }
+
+          const rawQuestions = response.data.questions || [];
+          const normalizedQuestions = rawQuestions.map((q: any) => ({
+            ...q,
+            text: q.text || q.question || "",
+          }));
+
+          const sortedQuestions = normalizedQuestions.sort(
+            (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
           );
           setQuestions(sortedQuestions);
+
           // Initialize answers — null for dropdowns, empty string for text
           const initialAnswers: Record<string, number | string> = {};
           sortedQuestions.forEach((q: any) => {
@@ -55,13 +69,13 @@ export default function ScreeningQuestionsPage() {
           setAnswers(initialAnswers);
         }
       } catch (err: any) {
-        console.error("Failed to load screening questions", err);
+        console.error("Failed to start screening session", err);
         setError("Failed to load screening questions.");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchQuestions();
+    initScreeningSession();
   }, [slug, jobId]);
 
   useRealtimeChannel(jobId ? `job:${jobId}` : null, {
@@ -84,7 +98,7 @@ export default function ScreeningQuestionsPage() {
     try {
       const payloadAnswers = questions.map((q) => {
         const sortedOptions = (q.options || []).sort(
-          (a: any, b: any) => a.sort_order - b.sort_order
+          (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
         );
 
         if (sortedOptions.length > 0) {
@@ -101,7 +115,8 @@ export default function ScreeningQuestionsPage() {
         }
       });
 
-      const response = await jobsApi.submitScreeningAnswers(slug, jobId, payloadAnswers);
+      const screeningToken = localStorage.getItem("screening_token") || undefined;
+      const response = await jobsApi.submitScreeningAnswers(slug, jobId, payloadAnswers, screeningToken);
 
       if (response.status === "success" && response.data) {
         if (!response.data.passed) {
@@ -109,8 +124,12 @@ export default function ScreeningQuestionsPage() {
           return;
         }
 
-        localStorage.setItem("screening_token", response.data.screening_token);
-        localStorage.setItem("screening_attempt_id", response.data.screening_attempt_id);
+        if (response.data.screening_token) {
+          localStorage.setItem("screening_token", response.data.screening_token);
+        }
+        if (response.data.screening_attempt_id) {
+          localStorage.setItem("screening_attempt_id", response.data.screening_attempt_id);
+        }
         markScreeningStepComplete();
 
         setIsSuccess(true);

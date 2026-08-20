@@ -18,8 +18,6 @@ import {
 } from "../../utils/queueEntryStatus";
 import { PendingOutcomeBannerSkeleton } from "./queuePanelSkeletons";
 
-import { AttributedNotesSection } from "./AttributedNotesSection";
-
 const OUTCOME_OPTIONS: {
     value: QueueEntryOutcome;
     icon: typeof CheckCircle;
@@ -49,7 +47,6 @@ export function InterviewOutcomeModal({
     const [selected, setSelected] = useState<QueueEntryOutcome | null>(null);
     const [rating, setRating] = useState<number | null>(null);
     const [noteText, setNoteText] = useState("");
-    const [localNotes, setLocalNotes] = useState(candidate.interviewNotes || []);
 
     const name = getParticipantDisplayName(candidate.participant);
 
@@ -58,9 +55,8 @@ export function InterviewOutcomeModal({
             setSelected(null);
             setRating(null);
             setNoteText("");
-            setLocalNotes(candidate.interviewNotes || []);
         }
-    }, [isOpen, candidate]);
+    }, [isOpen]);
 
     useBodyScrollLock(isOpen);
 
@@ -220,7 +216,7 @@ export function InterviewOutcomeModal({
                                 </div>
                             </div>
 
-                            {/* Attributed Interview Notes Section */}
+                            {/* Outcome Note Section */}
                             <div className="space-y-2 pt-2">
                                 <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                                     Outcome Note{" "}
@@ -229,18 +225,9 @@ export function InterviewOutcomeModal({
                                 <textarea
                                     value={noteText}
                                     onChange={(e) => setNoteText(e.target.value)}
-                                    rows={2}
+                                    rows={3}
                                     placeholder="Add notes for this outcome..."
                                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#FF512F] focus:border-[#FF512F]"
-                                />
-                            </div>
-
-                            <div className="pt-3 border-t border-gray-100">
-                                <AttributedNotesSection
-                                    jobId={candidate.queueEntryId ? candidate.queueEntryId : ""}
-                                    queueEntryId={candidate.queueEntryId}
-                                    notes={localNotes}
-                                    onNotesUpdated={(updated) => setLocalNotes(updated)}
                                 />
                             </div>
                         </>
