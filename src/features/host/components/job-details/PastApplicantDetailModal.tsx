@@ -199,21 +199,21 @@ export default function PastApplicantDetailModal({
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden pb-2">
                 {/* Header */}
-                <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+                <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 bg-gradient-to-br from-[#FF512F] to-[#FF7A00] rounded-full shrink-0 flex items-center justify-center font-bold text-white text-sm select-none">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#FF512F] to-[#FF7A00] rounded-full shrink-0 flex items-center justify-center font-bold text-white text-sm select-none shadow-xs">
                             {initials}
                         </div>
-                        <div className="min-w-0 flex items-center gap-2 flex-1">
-                            <h2 className="text-base font-bold text-gray-900 truncate" title={name}>{name}</h2>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-base font-bold text-gray-900 truncate leading-snug" title={name}>{name}</h2>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="shrink-0 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                        className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-[#FF512F]/15 text-gray-400 hover:text-[#FF512F] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
                         aria-label="Close"
                     >
                         <X className="w-4 h-4" />
@@ -221,7 +221,7 @@ export default function PastApplicantDetailModal({
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-brand [scrollbar-gutter:stable]">
+                <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-brand [scrollbar-gutter:stable] mb-1">
                     {currentIsLoading || !currentDetail ? (
                         <div className="space-y-6 animate-pulse select-none py-2">
                             {/* Contact & Status Grid Skeleton */}
@@ -282,13 +282,13 @@ export default function PastApplicantDetailModal({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
                                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                        <User className="w-3.5 h-3.5" />
+                                        <User className="w-3.5 h-3.5 text-[#FF512F]" />
                                         Participant Profile
                                     </h3>
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-start text-xs gap-4">
                                             <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                                                <Mail className="w-3 h-3 text-gray-400" />
+                                                <Mail className="w-3 h-3 text-[#FF512F]" />
                                                 Email:
                                             </span>
                                             <a
@@ -300,7 +300,7 @@ export default function PastApplicantDetailModal({
                                         </div>
                                         <div className="flex justify-between items-start text-xs gap-4">
                                             <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                                                <Phone className="w-3 h-3 text-gray-400" />
+                                                <Phone className="w-3 h-3 text-[#FF512F]" />
                                                 Phone:
                                             </span>
                                             <span className="text-gray-700 font-bold break-all text-right">
@@ -312,7 +312,7 @@ export default function PastApplicantDetailModal({
 
                                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
                                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                        <CheckCircle className="w-3.5 h-3.5" />
+                                        <CheckCircle className="w-3.5 h-3.5 text-[#FF512F]" />
                                         Queue & Interview Status
                                     </h3>
                                     <div className="space-y-2">
@@ -343,7 +343,7 @@ export default function PastApplicantDetailModal({
                             {/* Timeline */}
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5" />
+                                    <Clock className="w-3.5 h-3.5 text-[#FF512F]" />
                                     Event Timeline
                                 </h3>
                                 <div className="text-xs space-y-1.5">
@@ -372,22 +372,22 @@ export default function PastApplicantDetailModal({
                             {currentDetail.screening_answers && currentDetail.screening_answers.length > 0 && (
                                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3 animate-fade-in">
                                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                        <HelpCircle className="w-3.5 h-3.5" />
-                                        Screening Answers (Original Version)
+                                        <HelpCircle className="w-3.5 h-3.5 text-[#FF512F]" />
+                                        Screening Answers <span className="text-[#FF512F]">(Original Version)</span>
                                     </h3>
                                     <div className="space-y-3">
                                         {currentDetail.screening_answers.map((ans, idx) => (
                                             <div
                                                 key={ans.question_id || idx}
-                                                className="bg-white p-3 rounded-lg border border-gray-150 text-xs break-words"
+                                                className="bg-white p-3.5 rounded-xl border border-gray-200/80 text-xs break-words shadow-2xs"
                                             >
                                                 <div className="grid grid-cols-[1.25rem_1fr] gap-x-2 gap-y-2 items-baseline">
-                                                    <span className="font-medium text-gray-500 leading-snug">Q:</span>
-                                                    <p className="m-0 font-normal text-gray-800 leading-snug break-words min-w-0">
+                                                    <span className="font-semibold text-gray-500 leading-snug">Q:</span>
+                                                    <p className="m-0 font-medium text-gray-800 leading-snug break-words min-w-0">
                                                         {ans.question}
                                                     </p>
-                                                    <span className="font-medium text-gray-500 leading-snug">A:</span>
-                                                    <span className="font-normal text-gray-800 leading-snug break-words min-w-0">
+                                                    <span className="font-semibold text-gray-500 leading-snug">A:</span>
+                                                    <span className="font-medium text-gray-800 leading-snug break-words min-w-0">
                                                         {ans.selected_option_text || `Option #${ans.selected_option_index + 1}`}
                                                     </span>
                                                 </div>
@@ -400,8 +400,8 @@ export default function PastApplicantDetailModal({
                             {/* Interview Notes */}
                             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
                                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FileText className="w-3.5 h-3.5" />
-                                    Interview Notes ({currentDetail.interview_notes?.length || 0})
+                                    <FileText className="w-3.5 h-3.5 text-[#FF512F]" />
+                                    Interview Notes <span className="text-[#FF512F]">({currentDetail.interview_notes?.length || 0})</span>
                                 </h3>
                                 <InterviewNotesList
                                     notes={currentDetail.interview_notes || []}
