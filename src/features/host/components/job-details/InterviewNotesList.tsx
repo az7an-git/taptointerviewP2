@@ -53,8 +53,8 @@ export default function InterviewNotesList({
     return (
         <div className="space-y-3">
             {/* Add Note Input */}
-            <div className="flex items-start gap-2">
-                <div className="flex-1 min-w-0 border border-gray-200 rounded-lg focus-within:border-[#FF512F] transition-colors overflow-hidden bg-white">
+            <div className="flex items-stretch gap-2.5">
+                <div className="flex-1 min-w-0 border border-gray-200 rounded-xl focus-within:border-[#FF512F] focus-within:ring-1 focus-within:ring-[#FF512F]/30 transition-all overflow-hidden bg-white shadow-2xs">
                     <textarea
                         placeholder="Add an interview note..."
                         value={newNoteContent}
@@ -65,7 +65,7 @@ export default function InterviewNotesList({
                                 handleAdd();
                             }
                         }}
-                        className="w-full px-2.5 py-1.5 text-xs focus:outline-none resize-none bg-transparent block"
+                        className="w-full px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none resize-none bg-transparent block"
                         disabled={isAdding}
                         rows={2}
                     />
@@ -73,7 +73,7 @@ export default function InterviewNotesList({
                 <button
                     onClick={handleAdd}
                     disabled={isAdding || !newNoteContent.trim()}
-                    className="shrink-0 px-4 py-2 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] text-white rounded-lg text-xs font-bold hover:shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer shadow-sm min-w-[60px]"
+                    className="shrink-0 px-5 bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs min-w-[70px]"
                 >
                     {isAdding ? (
                         <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-white" />
@@ -84,16 +84,16 @@ export default function InterviewNotesList({
             </div>
 
             {/* Notes List */}
-            <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-brand [scrollbar-gutter:stable]">
+            <div className="space-y-2.5 max-h-60 overflow-y-auto scrollbar-brand pr-0">
                 {notes.length === 0 && (
-                    <p className="text-xs text-gray-400 italic text-center py-3">
+                    <p className="text-xs text-gray-400 italic text-center py-3 bg-white rounded-xl border border-gray-200/80">
                         No interview notes yet.
                     </p>
                 )}
                 {notes.map((note) => (
                     <div
                         key={note.id}
-                        className="bg-white p-3 rounded-lg border border-gray-150 text-xs space-y-1"
+                        className="bg-white p-3.5 rounded-xl border border-gray-200/80 text-xs space-y-1.5 shadow-2xs"
                     >
                         {editingNoteId === note.id ? (
                             <div className="flex items-start gap-2">

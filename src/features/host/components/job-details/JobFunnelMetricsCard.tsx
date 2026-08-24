@@ -93,13 +93,13 @@ export default function JobFunnelMetricsCard({ jobId }: JobFunnelMetricsCardProp
                 <button
                     onClick={fetchMetrics}
                     disabled={isLoading}
-                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    className="text-gray-400 hover:text-[#FF512F] hover:bg-[#FF512F]/15 p-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                     title="Refresh metrics"
                 >
                     {isLoading && metrics ? (
-                        <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-gray-500" />
+                        <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-[#FF512F]" />
                     ) : (
-                        <RotateCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                        <RotateCw className={`w-3.5 h-3.5 text-[#FF512F] ${isLoading ? "animate-spin" : ""}`} />
                     )}
                 </button>
             </div>
