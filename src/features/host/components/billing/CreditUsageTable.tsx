@@ -130,12 +130,12 @@ export default function CreditUsageTable() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {usageEntries.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3.5 font-medium text-gray-600 flex items-center gap-2">
+                  <tr key={entry.id} className="group hover:bg-[#FFF5F2]/60 transition-colors">
+                    <td className="py-3.5 px-2 font-medium text-gray-600 group-hover:text-[#FF512F] transition-colors flex items-center gap-2">
                       {formatDate(entry.created_at)}
                     </td>
                     <td
-                      className="py-3.5 px-4 text-gray-800 max-w-[170px] truncate"
+                      className="py-3.5 px-4 text-gray-800 group-hover:text-[#FF512F] transition-colors max-w-[170px] truncate"
                       title={`${entry.participant?.first_name} ${entry.participant?.last_name}`}
                     >
                       {entry.participant?.first_name} {entry.participant?.last_name}

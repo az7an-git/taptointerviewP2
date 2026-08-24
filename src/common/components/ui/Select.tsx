@@ -82,19 +82,19 @@ export default function Select({
               setIsOpen(!isOpen);
             }
           }}
-          className={`w-full px-4 ${buttonClassName || "py-2"} transition-all duration-200 flex items-center justify-between group rounded-xl shadow-sm min-w-0 ${disabled ? "cursor-not-allowed opacity-60 pointer-events-none" : "cursor-pointer"} ${isGhost
-            ? `bg-white/5 border ${isOpen ? 'border-orange-500 ring-1 ring-orange-500' : 'border-white/10 hover:border-white/20'} text-white`
+          className={`w-full px-4 ${buttonClassName || "py-2"} transition-all duration-300 flex items-center justify-between group rounded-xl shadow-sm min-w-0 focus:outline-none ${disabled ? "cursor-not-allowed opacity-60 pointer-events-none" : "cursor-pointer"} ${isGhost
+            ? `border ${isOpen ? 'border-[#FF512F]/60 ring-1 ring-[#FF512F]/40 bg-white/10' : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.07] focus-visible:border-[#FF512F]/60 focus-visible:ring-1 focus-visible:ring-[#FF512F]/40 focus-visible:bg-white/10'} text-white`
             : `bg-gray-50/50 border ${isOpen ? 'border-[#FF512F] bg-white shadow-[0_0_0_4px_rgba(255,81,47,0.1)]' : error ? 'border-red-500' : 'border-gray-300 hover:border-gray-400 hover:bg-white'} text-gray-900`
             }`}
         >
           <span className={`text-sm font-medium truncate text-left flex-1 pr-2 ${value ? (isGhost ? 'text-white' : 'text-gray-900') : 'text-gray-400'}`}>
             {selectedLabel || placeholder}
           </span>
-          <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-180 text-[#FF512F]' : 'text-gray-400 group-hover:text-gray-300 group-focus:text-[#FF512F]'}`} />
         </div>
 
         {isOpen && !disabled && (
-          <div className={`absolute z-[100] w-full top-full left-0 mt-1.5 border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-200 origin-top overflow-hidden ${isGhost ? 'bg-gray-800 border-white/10' : 'bg-white border-gray-200'
+          <div className={`absolute z-[100] w-full top-full left-0 mt-1.5 border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-200 origin-top overflow-hidden ${isGhost ? 'bg-[#0F172A] border-white/10' : 'bg-white border-gray-200'
             }`}>
             <div className="max-h-60 overflow-y-auto scrollbar-custom">
               {options.map((opt) => (
@@ -105,7 +105,7 @@ export default function Select({
                     setIsOpen(false);
                   }}
                   className={`px-4 py-3 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer select-none first:rounded-t-xl last:rounded-b-xl ${value === opt.value
-                    ? (isGhost ? 'bg-orange-500 text-white' : 'bg-[#FF512F]/15 text-[#FF512F]')
+                    ? (isGhost ? 'bg-gradient-to-r from-[#FF512F] to-[#FF7A00] text-white' : 'bg-[#FF512F]/15 text-[#FF512F]')
                     : (isGhost ? 'text-gray-400 hover:bg-white/10 hover:text-white' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900')
                     }`}
                 >
