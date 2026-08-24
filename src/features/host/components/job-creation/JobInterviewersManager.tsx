@@ -150,10 +150,10 @@ export default function JobInterviewersManager({ jobId }: JobInterviewersManager
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm min-w-0 space-y-6 animate-fade-in-up">
       <div className="space-y-1">
         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-indigo-500" />
+          <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0" />
           Manage Interviewers
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 pl-7">
           Assign team members to conduct interviews for this job.
         </p>
       </div>

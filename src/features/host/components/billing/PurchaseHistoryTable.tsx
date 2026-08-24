@@ -125,8 +125,8 @@ export default function PurchaseHistoryTable() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {purchases.map((purchase) => (
-                  <tr key={purchase.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3.5 font-medium text-gray-600 flex items-center gap-2">
+                  <tr key={purchase.id} className="group hover:bg-[#FFF5F2]/60 transition-colors">
+                    <td className="py-3.5 px-2 font-medium text-gray-600 group-hover:text-[#FF512F] transition-colors flex items-center gap-2">
                       {formatDate(purchase.created_at)}
                     </td>
                     <td className="py-3.5 px-6 text-center font-bold text-emerald-600">
