@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, User, Mail, ShieldCheck, UserPlus, PauseCircle, XCircle, Info, PhoneCall, CheckCircle2, Lock, Clock, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { ParticipantFooter, ParticipantHeader } from "../components";
+import { ParticipantTwoPanelLayout } from "../components";
+import { getParticipantErrorMessage } from "../utils/participantErrorMessage";
 import { jobsApi } from "@/api/jobsApi";
 import { Spinner } from "@/common/ui/Spinner";
 import { PhoneInput } from "@/common/ui/PhoneInput";
@@ -85,16 +86,6 @@ export default function DetailsPage() {
     },
   });
 
-  const getErrorMessage = (err: any, fallback: string): string => {
-    const d = err?.response?.data;
-    if (d) {
-      if (typeof d.data === "string" && d.data.trim()) return d.data;
-      if (typeof d.message === "string" && d.message.trim()) return d.message;
-      if (typeof d.error === "string" && d.error.trim()) return d.error;
-    }
-    return err?.message || fallback;
-  };
-
   const extractVerificationPayload = (res: any): PhoneVerificationStatus | null => {
     if (!res) return null;
     if (res.data && typeof res.data === "object" && "verification_attempts_remaining" in res.data) {
@@ -131,7 +122,7 @@ export default function DetailsPage() {
       setResendSeconds(30);
       toast.success("6-digit verification code sent to your phone via SMS!");
     } catch (err: any) {
-      toast.error(getErrorMessage(err, "Failed to send verification SMS. Ensure number is mobile-capable."));
+      toast.error(getParticipantErrorMessage(err, "Failed to send verification SMS. Ensure number is mobile-capable."));
     } finally {
       setIsRequestingOtp(false);
     }
@@ -158,7 +149,7 @@ export default function DetailsPage() {
       setOtpCode("");
       toast.success("A new verification code has been sent!");
     } catch (err: any) {
-      toast.error(getErrorMessage(err, "Failed to resend code. Please try again."));
+      toast.error(getParticipantErrorMessage(err, "Failed to resend code. Please try again."));
     } finally {
       setIsResendingOtp(false);
     }
@@ -181,7 +172,7 @@ export default function DetailsPage() {
         }
       }
     } catch (err: any) {
-      const errMsg = getErrorMessage(err, "Invalid verification code. Please check and try again.");
+      const errMsg = getParticipantErrorMessage(err, "Invalid verification code. Please check and try again.");
       toast.error(errMsg);
       setOtpCode("");
 
@@ -261,371 +252,361 @@ export default function DetailsPage() {
         throw new Error("Failed to join queue");
       }
     } catch (err: any) {
-      toast.error(getErrorMessage(err, "Failed to join the queue. Please try again."));
+      toast.error(getParticipantErrorMessage(err, "Failed to join the queue. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-[#0B0F19] text-white font-sans flex flex-col antialiased overflow-y-auto overflow-x-hidden">
-      {/* Glow effects */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#FF512F] opacity-5 blur-3xl rounded-full pointer-events-none"></div>
+  const leftPanel = (
+    <>
+      <div className="space-y-6 relative z-10">
+        <button
+          type="button"
+          className="flex items-center gap-1 text-[#FF512F] hover:text-[#FF7A00] text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSubmitting}
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back</span>
+        </button>
 
-      <ParticipantHeader companyName={companyName} />
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-white/55 text-[10px] font-bold uppercase tracking-wider">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#FF512F]" />
+            <span>Step 2: Profile & Verification</span>
+          </div>
+          <h1 className="text-xl md:text-2xl font-black text-white tracking-tight leading-tight">Contact & Profile Setup</h1>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-4 relative z-10 w-full flex flex-col items-center justify-start py-6">
-        <div className="w-full max-w-4xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-5 my-auto">
-          {/* Left Side: Information / Intro (2/5 columns) */}
-          <div className="md:col-span-2 bg-gradient-to-br from-black/80 to-black/40 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[#FF512F] opacity-10 blur-2xl rounded-full pointer-events-none"></div>
+        <div className="space-y-4 pt-4 border-t border-white/5">
+          <p className="text-sm text-gray-300 leading-relaxed">
+            You passed the qualification check! Complete your profile and verify your phone number to enter the waiting room.
+          </p>
 
-            <div className="space-y-6 relative z-10">
-              <button
-                type="button"
-                className="flex items-center gap-1 text-[#FF512F] hover:text-[#FF7A00] text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSubmitting}
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
-              </button>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-white/55 text-[10px] font-bold uppercase tracking-wider">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#FF512F]" />
-                  <span>Step 2: Profile & Verification</span>
-                </div>
-                <h1 className="text-xl md:text-2xl font-black text-white tracking-tight leading-tight">Contact & Profile Setup</h1>
-              </div>
-
-              <div className="space-y-4 pt-4 border-t border-white/5">
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  You passed the qualification check! Complete your profile and verify your phone number to enter the waiting room.
-                </p>
-
-                {/* Candidate Guidance Banner 2 */}
-                <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 flex items-start gap-3 shadow-sm">
-                  <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
-                    Verification codes may take a moment to arrive and can land in spam/junk folders. Please check your messages carefully.
-                  </p>
-                </div>
-
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex items-start gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-200/80 leading-relaxed">
-                    At least one contact method (SMS or Email) must be enabled so we can notify you when your turn arrives.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden md:block pt-6 text-[10px] text-gray-500 font-medium border-t border-white/5 mt-6 relative z-10">
-              End-to-end secure session.
-            </div>
+          {/* Candidate Guidance Banner 2 */}
+          <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 flex items-start gap-3 shadow-sm">
+            <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
+              Verification codes may take a moment to arrive and can land in spam/junk folders. Please check your messages carefully.
+            </p>
           </div>
 
-          {/* Right Side: Form (3/5 columns) */}
-          <div className="md:col-span-3 p-6 flex flex-col justify-center">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-[#FF512F]" />
-                    First Name
-                  </label>
-                  <div className="mt-1.5 relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                    <input
-                      type="text"
-                      required
-                      disabled={isSubmitting}
-                      value={details.firstName}
-                      onChange={(e) => setDetails({ ...details, firstName: e.target.value })}
-                      placeholder="e.g. Jane"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-[#FF512F]" />
-                    Last Name
-                  </label>
-                  <div className="mt-1.5 relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                    <input
-                      type="text"
-                      required
-                      disabled={isSubmitting}
-                      value={details.lastName}
-                      onChange={(e) => setDetails({ ...details, lastName: e.target.value })}
-                      placeholder="e.g. Doe"
-                      className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#FF512F]" />
-                  Email Address
-                </label>
-                <div className="mt-1.5 relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                  <input
-                    type="email"
-                    required
-                    disabled={isSubmitting}
-                    value={details.email}
-                    onChange={(e) => setDetails({ ...details, email: e.target.value })}
-                    placeholder="jane@example.com"
-                    className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              {/* Phone Input with Twilio SMS OTP Integration */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="participant-phone" className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                    <PhoneCall className="w-3.5 h-3.5 text-[#FF512F]" />
-                    Mobile Phone Number
-                  </label>
-                  {isPhoneVerified && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      <CheckCircle2 className="w-3 h-3" /> Verified
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="w-full sm:flex-1 min-w-0">
-                    <PhoneInput
-                      id="participant-phone"
-                      disabled={isSubmitting || isPhoneVerified}
-                      value={details.phone}
-                      onChange={(phone) => {
-                        setDetails({ ...details, phone });
-                        if (verificationState) setVerificationState(null);
-                      }}
-                    />
-                  </div>
-
-                  {hasPhoneInput && !isPhoneVerified && (
-                    <button
-                      type="button"
-                      onClick={handleRequestOtp}
-                      disabled={isRequestingOtp || isSubmitting || Boolean(verificationState?.phone_verification_pending)}
-                      className="w-full sm:w-auto px-4 py-2.5 font-bold text-xs rounded-lg transition-all border border-white/15 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isRequestingOtp ? (
-                        <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-white shrink-0" />
-                      ) : verificationState?.phone_verification_pending ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      ) : (
-                        <PhoneCall className="w-3.5 h-3.5 shrink-0" />
-                      )}
-                      <span>{isRequestingOtp ? "Sending..." : verificationState?.phone_verification_pending ? "Code Sent" : "Send OTP"}</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* 6-Digit OTP Input Form Section */}
-                {verificationState?.phone_verification_pending && !isPhoneVerified && (
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 sm:p-4 space-y-3 animate-fade-in">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-gray-200">Enter 6-Digit SMS Code</span>
-                    </div>
-
-                    {/* Reusable OtpInput component */}
-                    <OtpInput
-                      value={otpCode}
-                      onChange={(val) => setOtpCode(val)}
-                      disabled={isVerifyingOtp || verificationState.phone_verification_locked}
-                    />
-
-                    {verificationState.phone_verification_locked ? (
-                      <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20">
-                        <Lock className="w-4 h-4 shrink-0" />
-                        <span>Too many failed attempts. Enter a different number.</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 pb-1 border-t border-white/5">
-                        <div className="flex items-center justify-between sm:justify-start gap-3">
-                          <span className="text-[11px] sm:text-[12px] text-gray-400 leading-normal">
-                            Attempts remaining: {verificationState.verification_attempts_remaining ?? 5}
-                          </span>
-                          {resendSeconds > 0 ? (
-                            <span className="text-[10px] sm:text-[12px] text-gray-400 flex items-center gap-1 whitespace-nowrap leading-normal">
-                              <Clock className="w-3 h-3 text-[#FF512F] shrink-0" /> Resend in {resendSeconds}s
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={handleResendOtp}
-                              disabled={isResendingOtp || isRequestingOtp}
-                              className="text-[10px] sm:text-[12px] font-bold text-[#FF512F] hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap disabled:opacity-50 leading-normal"
-                            >
-                              {isResendingOtp ? (
-                                <Spinner className="w-3 h-3 border-t-2 border-b-2 border-[#FF512F] shrink-0" />
-                              ) : (
-                                <RotateCcw className="w-3 h-3 shrink-0" />
-                              )}
-                              <span>{isResendingOtp ? "Resending..." : "Resend Code"}</span>
-                            </button>
-                          )}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleVerifyOtp}
-                          disabled={isVerifyingOtp || otpCode.length !== 6}
-                          className="w-full sm:w-auto px-4 py-1.5 border border-[#FF512F]/30 bg-[#FF512F]/10 hover:bg-[#FF512F]/20 disabled:hover:bg-[#FF512F]/10 disabled:opacity-50 text-[#FF512F] text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                        >
-                          {isVerifyingOtp && <Spinner className="w-3 h-3 border-t-2 border-b-2 border-white shrink-0" />}
-                          <span>Verify</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Mandatory Channel & Consent Rules */}
-              <div className="space-y-3 pt-2">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="relative flex items-start pt-0.5">
-                    <input
-                      type="checkbox"
-                      disabled={isSubmitting}
-                      checked={emailConsent}
-                      onChange={(e) => setEmailConsent(e.target.checked)}
-                      className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none transition-all cursor-pointer"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 pointer-events-none text-white">
-                      <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 stroke-current stroke-[2.5px] stroke-linecap-round stroke-linejoin-round">
-                        <polyline points="3 7.5 5.5 10 11 4"></polyline>
-                      </svg>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-400 leading-snug group-hover:text-gray-300 transition-colors">
-                    I agree to receive email notifications regarding queue status and interview links. {!smsConsent && <strong className="text-amber-400 font-medium">(Mandatory channel when SMS is off)</strong>}
-                  </span>
-                </label>
-
-                <label className={`flex items-start gap-3 group ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
-                  <div className="relative flex items-start pt-0.5">
-                    <input
-                      type="checkbox"
-                      disabled={isSubmitting || !hasPhoneInput}
-                      checked={smsConsent}
-                      onChange={(e) => setSmsConsent(e.target.checked)}
-                      className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none transition-all cursor-pointer"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 pointer-events-none text-white">
-                      <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 stroke-current stroke-[2.5px] stroke-linecap-round stroke-linejoin-round">
-                        <polyline points="3 7.5 5.5 10 11 4"></polyline>
-                      </svg>
-                    </div>
-                  </div>
-                  <span className={`text-xs text-gray-400 leading-snug transition-colors ${!hasPhoneInput ? "" : "group-hover:text-gray-300"}`}>
-                    I agree to receive automated SMS notifications regarding my interview turn. Reply STOP to opt out.
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="relative flex items-start pt-0.5">
-                    <input
-                      type="checkbox"
-                      required
-                      disabled={isSubmitting}
-                      checked={termsConsent}
-                      onChange={(e) => setTermsConsent(e.target.checked)}
-                      className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none transition-all cursor-pointer"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 pointer-events-none text-white">
-                      <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 stroke-current stroke-[2.5px] stroke-linecap-round stroke-linejoin-round">
-                        <polyline points="3 7.5 5.5 10 11 4"></polyline>
-                      </svg>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-400 leading-snug group-hover:text-gray-300 transition-colors">
-                    I agree to the Terms of Use and Privacy Policy.
-                  </span>
-                </label>
-              </div>
-
-              <div className="pt-4">
-                {queueClosedStatus && (
-                  <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3.5 py-3">
-                    {queueClosedStatus === "paused" ? (
-                      <PauseCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    )}
-                    <p className="text-xs font-medium text-amber-300 leading-snug">
-                      {queueClosedStatus === "paused"
-                        ? "The queue has been paused. You can still submit, but joining may be delayed."
-                        : "This position is no longer accepting applications. Submitting will likely be rejected."}
-                    </p>
-                  </div>
-                )}
-                {smsConsent && !isPhoneVerified && (
-                  <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 transition-all duration-150 ease-out animate-in fade-in slide-in-from-top-1 shadow-sm">
-                    <PhoneCall className="w-4 h-4 text-[#FF512F] shrink-0" />
-                    <p className="text-xs font-medium text-amber-200 leading-snug">
-                      {verificationState?.phone_verification_pending ? (
-                        <>
-                          <strong>Action Required:</strong> Enter the 6-digit verification code sent to your mobile phone into the boxes above.
-                        </>
-                      ) : (
-                        <>
-                          <strong>Action Required:</strong> Click the <strong>"Send OTP"</strong> button next to your mobile number above to receive your 6-digit verification code.
-                        </>
-                      )}
-                    </p>
-                  </div>
-                )}
-                {(() => {
-                  const isJoinDisabled = isSubmitting || !termsConsent || (!smsConsent && !emailConsent);
-                  return (
-                    <button
-                      type="submit"
-                      disabled={isJoinDisabled}
-                      className={`w-full bg-gradient-to-r from-[#FF512F] to-[#FF7A00] text-white font-bold px-4 sm:px-5 py-3.5 rounded-lg transition-all flex items-center justify-center gap-2.5 sm:gap-3 shadow-lg shadow-[#FF512F]/10 text-xs sm:text-sm ${isJoinDisabled
-                        ? "opacity-60 cursor-not-allowed"
-                        : "hover:from-[#E04020] hover:to-[#FF512F] hover:shadow-[#FF512F]/20 hover:scale-[1.01] cursor-pointer"
-                        }`}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Spinner className="w-4 h-4 border-t-2 border-b-2 border-white shrink-0" />
-                          <span>Joining Queue...</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 shrink-0" />
-                          <span className="text-center leading-snug min-w-0 flex-1">
-                            Join Interview Waiting Room
-                          </span>
-                          <ArrowRight className="w-4 h-4 shrink-0" />
-                        </>
-                      )}
-                    </button>
-                  );
-                })()}
-              </div>
-            </form>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex items-start gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-200/80 leading-relaxed">
+              At least one contact method (SMS or Email) must be enabled so we can notify you when your turn arrives.
+            </p>
           </div>
         </div>
       </div>
 
-      <ParticipantFooter />
-    </div>
+      <div className="hidden md:block pt-6 text-[10px] text-gray-500 font-medium border-t border-white/5 mt-6 relative z-10">
+        End-to-end secure session.
+      </div>
+    </>
+  );
+
+  const rightPanel = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-[#FF512F]" />
+            First Name
+          </label>
+          <div className="mt-1.5 relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+            <input
+              type="text"
+              required
+              disabled={isSubmitting}
+              value={details.firstName}
+              onChange={(e) => setDetails({ ...details, firstName: e.target.value })}
+              placeholder="e.g. Jane"
+              className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-[#FF512F]" />
+            Last Name
+          </label>
+          <div className="mt-1.5 relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+            <input
+              type="text"
+              required
+              disabled={isSubmitting}
+              value={details.lastName}
+              onChange={(e) => setDetails({ ...details, lastName: e.target.value })}
+              placeholder="e.g. Doe"
+              className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+          <Mail className="w-3.5 h-3.5 text-[#FF512F]" />
+          Email Address
+        </label>
+        <div className="mt-1.5 relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+          <input
+            type="email"
+            required
+            disabled={isSubmitting}
+            value={details.email}
+            onChange={(e) => setDetails({ ...details, email: e.target.value })}
+            placeholder="jane@example.com"
+            className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
+          />
+        </div>
+      </div>
+
+      {/* Phone Input with Twilio SMS OTP Integration */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label htmlFor="participant-phone" className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+            <PhoneCall className="w-3.5 h-3.5 text-[#FF512F]" />
+            Mobile Phone Number
+          </label>
+          {isPhoneVerified && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <CheckCircle2 className="w-3 h-3" /> Verified
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="w-full sm:flex-1 min-w-0">
+            <PhoneInput
+              id="participant-phone"
+              disabled={isSubmitting || isPhoneVerified}
+              value={details.phone}
+              onChange={(phone) => {
+                setDetails({ ...details, phone });
+                if (verificationState) setVerificationState(null);
+              }}
+            />
+          </div>
+
+          {hasPhoneInput && !isPhoneVerified && (
+            <button
+              type="button"
+              onClick={handleRequestOtp}
+              disabled={isRequestingOtp || isSubmitting || Boolean(verificationState?.phone_verification_pending)}
+              className="w-full sm:w-auto px-4 py-2.5 font-bold text-xs rounded-lg transition-all border border-white/15 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isRequestingOtp ? (
+                <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-white shrink-0" />
+              ) : verificationState?.phone_verification_pending ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              ) : (
+                <PhoneCall className="w-3.5 h-3.5 shrink-0" />
+              )}
+              <span>{isRequestingOtp ? "Sending..." : verificationState?.phone_verification_pending ? "Code Sent" : "Send OTP"}</span>
+            </button>
+          )}
+        </div>
+
+        {/* 6-Digit OTP Input Form Section */}
+        {verificationState?.phone_verification_pending && !isPhoneVerified && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 sm:p-4 space-y-3 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-200">Enter 6-Digit SMS Code</span>
+            </div>
+
+            {/* Reusable OtpInput component */}
+            <OtpInput
+              value={otpCode}
+              onChange={(val) => setOtpCode(val)}
+              disabled={isVerifyingOtp || verificationState.phone_verification_locked}
+            />
+
+            {verificationState.phone_verification_locked ? (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20">
+                <Lock className="w-4 h-4 shrink-0" />
+                <span>Too many failed attempts. Enter a different number.</span>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 pb-1 border-t border-white/5">
+                <div className="flex items-center justify-between sm:justify-start gap-3">
+                  <span className="text-[11px] sm:text-[12px] text-gray-400 leading-normal">
+                    Attempts remaining: {verificationState.verification_attempts_remaining ?? 5}
+                  </span>
+                  {resendSeconds > 0 ? (
+                    <span className="text-[10px] sm:text-[12px] text-gray-400 flex items-center gap-1 whitespace-nowrap leading-normal">
+                      <Clock className="w-3 h-3 text-[#FF512F] shrink-0" /> Resend in {resendSeconds}s
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={isResendingOtp || isRequestingOtp}
+                      className="text-[10px] sm:text-[12px] font-bold text-[#FF512F] hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap disabled:opacity-50 leading-normal"
+                    >
+                      {isResendingOtp ? (
+                        <Spinner className="w-3 h-3 border-t-2 border-b-2 border-[#FF512F] shrink-0" />
+                      ) : (
+                        <RotateCcw className="w-3 h-3 shrink-0" />
+                      )}
+                      <span>{isResendingOtp ? "Resending..." : "Resend Code"}</span>
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={isVerifyingOtp || otpCode.length !== 6}
+                  className="w-full sm:w-auto px-4 py-1.5 border border-[#FF512F]/30 bg-[#FF512F]/10 hover:bg-[#FF512F]/20 disabled:hover:bg-[#FF512F]/10 disabled:opacity-50 text-[#FF512F] text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {isVerifyingOtp && <Spinner className="w-3 h-3 border-t-2 border-b-2 border-white shrink-0" />}
+                  <span>Verify</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Mandatory Channel & Consent Rules */}
+      <div className="space-y-3 pt-2">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative flex items-start pt-0.5">
+            <input
+              type="checkbox"
+              disabled={isSubmitting}
+              checked={emailConsent}
+              onChange={(e) => setEmailConsent(e.target.checked)}
+              className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none transition-all cursor-pointer"
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 pointer-events-none text-white">
+              <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 stroke-current stroke-[2.5px] stroke-linecap-round stroke-linejoin-round">
+                <polyline points="3 7.5 5.5 10 11 4"></polyline>
+              </svg>
+            </div>
+          </div>
+          <span className="text-xs text-gray-400 leading-snug group-hover:text-gray-300 transition-colors">
+            I agree to receive email notifications regarding queue status and interview links. {!smsConsent && <strong className="text-amber-400 font-medium">(Mandatory channel when SMS is off)</strong>}
+          </span>
+        </label>
+
+        <label className={`flex items-start gap-3 group ${!hasPhoneInput ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+          <div className="relative flex items-start pt-0.5">
+            <input
+              type="checkbox"
+              disabled={isSubmitting || !hasPhoneInput}
+              checked={smsConsent}
+              onChange={(e) => setSmsConsent(e.target.checked)}
+              className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none transition-all cursor-pointer"
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 pointer-events-none text-white">
+              <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 stroke-current stroke-[2.5px] stroke-linecap-round stroke-linejoin-round">
+                <polyline points="3 7.5 5.5 10 11 4"></polyline>
+              </svg>
+            </div>
+          </div>
+          <span className={`text-xs text-gray-400 leading-snug transition-colors ${!hasPhoneInput ? "" : "group-hover:text-gray-300"}`}>
+            I agree to receive automated SMS notifications regarding my interview turn. Reply STOP to opt out.
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative flex items-start pt-0.5">
+            <input
+              type="checkbox"
+              required
+              disabled={isSubmitting}
+              checked={termsConsent}
+              onChange={(e) => setTermsConsent(e.target.checked)}
+              className="peer appearance-none w-4 h-4 rounded bg-white/5 border border-white/10 checked:bg-[#FF512F] checked:border-[#FF512F] focus:outline-none transition-all cursor-pointer"
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100 pointer-events-none text-white">
+              <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 stroke-current stroke-[2.5px] stroke-linecap-round stroke-linejoin-round">
+                <polyline points="3 7.5 5.5 10 11 4"></polyline>
+              </svg>
+            </div>
+          </div>
+          <span className="text-xs text-gray-400 leading-snug group-hover:text-gray-300 transition-colors">
+            I agree to the Terms of Use and Privacy Policy.
+          </span>
+        </label>
+      </div>
+
+      <div className="pt-4">
+        {queueClosedStatus && (
+          <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3.5 py-3">
+            {queueClosedStatus === "paused" ? (
+              <PauseCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            ) : (
+              <XCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            )}
+            <p className="text-xs font-medium text-amber-300 leading-snug">
+              {queueClosedStatus === "paused"
+                ? "The queue has been paused. You can still submit, but joining may be delayed."
+                : "This position is no longer accepting applications. Submitting will likely be rejected."}
+            </p>
+          </div>
+        )}
+        {smsConsent && !isPhoneVerified && (
+          <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 transition-all duration-150 ease-out animate-in fade-in slide-in-from-top-1 shadow-sm">
+            <PhoneCall className="w-4 h-4 text-[#FF512F] shrink-0" />
+            <p className="text-xs font-medium text-amber-200 leading-snug">
+              {verificationState?.phone_verification_pending ? (
+                <>
+                  <strong>Action Required:</strong> Enter the 6-digit verification code sent to your mobile phone into the boxes above.
+                </>
+              ) : (
+                <>
+                  <strong>Action Required:</strong> Click the <strong>"Send OTP"</strong> button next to your mobile number above to receive your 6-digit verification code.
+                </>
+              )}
+            </p>
+          </div>
+        )}
+        {(() => {
+          const isJoinDisabled = isSubmitting || !termsConsent || (!smsConsent && !emailConsent);
+          return (
+            <button
+              type="submit"
+              disabled={isJoinDisabled}
+              className={`w-full bg-gradient-to-r from-[#FF512F] to-[#FF7A00] text-white font-bold px-4 sm:px-5 py-3.5 rounded-lg transition-all flex items-center justify-center gap-2.5 sm:gap-3 shadow-lg shadow-[#FF512F]/10 text-xs sm:text-sm ${isJoinDisabled
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:from-[#E04020] hover:to-[#FF512F] hover:shadow-[#FF512F]/20 hover:scale-[1.01] cursor-pointer"
+                }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <Spinner className="w-4 h-4 border-t-2 border-b-2 border-white shrink-0" />
+                  <span>Joining Queue...</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 shrink-0" />
+                  <span className="text-center leading-snug min-w-0 flex-1">
+                    Join Interview Waiting Room
+                  </span>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
+                </>
+              )}
+            </button>
+          );
+        })()}
+      </div>
+    </form>
+  );
+
+  return (
+    <ParticipantTwoPanelLayout
+      companyName={companyName}
+      leftPanel={leftPanel}
+      rightPanel={rightPanel}
+    />
   );
 }
