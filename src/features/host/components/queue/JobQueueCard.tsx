@@ -382,8 +382,8 @@ export function JobQueueCard({
             {/* Header with Admin Request Inbox Badge */}
             <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-gray-200/80 bg-white">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white border border-gray-100 shadow-sm rounded-lg flex items-center justify-center shrink-0">
-                        <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-[#FF512F]/10 to-[#FF7A00]/10 border border-[#FF512F]/20 rounded-xl flex items-center justify-center shrink-0 shadow-2xs">
+                        <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-[#FF512F]" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -431,8 +431,8 @@ export function JobQueueCard({
                                 : undefined)
                         }
                         className={`w-full sm:w-auto sm:min-w-0 sm:max-w-[240px] md:max-w-[280px] text-white hover:bg-[#E64A2E] px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 overflow-hidden ${isCandidateReady && !admitBlocked && !isQueuePaused
-                            ? "animate-pulse shadow-lg shadow-[#FF512F]/40 border-2 border-orange-400 ring-2 ring-[#FF512F]/30 bg-gradient-to-r from-[#FF512F] to-[#FF7A00]"
-                            : "bg-[#FF512F]"
+                                ? "animate-pulse shadow-lg shadow-[#FF512F]/40 border-2 border-orange-400 ring-2 ring-[#FF512F]/30 bg-gradient-to-r from-[#FF512F] to-[#FF7A00]"
+                                : "bg-[#FF512F]"
                             }`}
                     >
                         {isAdmitting ? (

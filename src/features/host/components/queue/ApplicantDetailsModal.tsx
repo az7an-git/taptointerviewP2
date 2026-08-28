@@ -116,22 +116,22 @@ export function ApplicantDetailsModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden sm:min-h-[450px]">
+      <div className="bg-white w-full sm:max-w-2xl sm:mx-4 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up-bottom sm:animate-scale-up max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden sm:min-h-[450px] pb-2">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#FF512F] to-[#FF7A00] rounded-full flex-shrink-0 flex items-center justify-center font-bold text-white text-sm">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#FF512F] to-[#FF7A00] rounded-full shrink-0 flex items-center justify-center font-bold text-white text-sm shadow-xs">
               {initials}
             </div>
-            <div className="min-w-0 flex items-center gap-2">
-              <h2 className="text-base font-bold text-gray-900 truncate">{name}</h2>
+            <div className="min-w-0 flex items-center gap-2 flex-1">
+              <h2 className="text-base font-bold text-gray-900 truncate leading-snug" title={name}>{name}</h2>
               {isLoading && <Spinner className="w-3.5 h-3.5 text-gray-400 animate-spin shrink-0" />}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-gray-100/80 hover:bg-[#FF512F]/15 text-gray-400 hover:text-[#FF512F] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -139,7 +139,7 @@ export function ApplicantDetailsModal({
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-brand [scrollbar-gutter:stable]">
+        <div className="overflow-y-auto flex-1 p-6 space-y-6 scrollbar-brand [scrollbar-gutter:stable] mb-1">
 
           {/* Basic Details & Participant Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
