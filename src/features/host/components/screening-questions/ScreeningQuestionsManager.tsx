@@ -5,7 +5,7 @@ import { reorderList, useListReorder } from "@/common/hooks/useListReorder";
 import { Plus, HelpCircle } from "lucide-react";
 import { Spinner } from "@/common/ui/Spinner";
 import { toast } from "sonner";
-import { countComplianceByTier, formatComplianceSummary } from "../../utils/compliance";
+import { countComplianceByTier } from "../../utils/compliance";
 import {
   applySortOrders,
   canAddScreeningQuestion,
@@ -21,19 +21,12 @@ interface Props {
   jobId: string;
   initialQuestions?: ScreeningQuestion[];
   onQuestionsChange?: (questions: ScreeningQuestion[]) => void;
-  /** When true, saves to API after add, delete, or reorder */
   persistToApi?: boolean;
-  /**
-   * When true (wizard mode), runs AI compliance review after each question
-   * add/edit so employers see Pass/Caution/Blocked feedback in real time.
-   */
+
   runComplianceInWizard?: boolean;
   disabled?: boolean;
-  /** When false, hides the add-question control (e.g. read-only job details). Defaults to true. */
   showAddButton?: boolean;
-  /** When false, hides drag-to-reorder handles. Defaults to true. */
   showDragHandles?: boolean;
-  /** Callback fired when the compliance review state changes */
   onReviewingChange?: (isReviewing: boolean) => void;
 }
 
@@ -74,10 +67,6 @@ export default function ScreeningQuestionsManager({
   };
 
   const complianceCounts = React.useMemo(() => countComplianceByTier(questions), [questions]);
-  const complianceSummary = React.useMemo(
-    () => formatComplianceSummary(complianceCounts),
-    [complianceCounts]
-  );
 
   const applySavedQuestions = (saved: ScreeningQuestion[]) => {
     setQuestions(saved);
@@ -296,18 +285,44 @@ export default function ScreeningQuestionsManager({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-[#FF512F]" />
+            <HelpCircle className="w-4 h-4 text-[#FF512F] shrink-0" />
             Qualification Questions
           </h3>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-gray-500 font-medium">
-              {questions.length} / {MAX_SCREENING_QUESTIONS} questions
-              {complianceSummary && (
-                <span className="text-gray-400"> · {complianceSummary}</span>
+          <div className="flex items-center gap-2 mt-0.5 pl-6">
+            <div className="text-xs text-gray-500 font-medium flex items-center gap-1.5 flex-wrap">
+              <span>{questions.length} / {MAX_SCREENING_QUESTIONS} questions</span>
+              {(complianceCounts.approved > 0 || complianceCounts.flagged > 0 || complianceCounts.blocked > 0 || complianceCounts.pending > 0) && (
+                <>
+                  <span className="text-gray-300">·</span>
+                  {complianceCounts.approved > 0 && (
+                    <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/60 text-[11px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {complianceCounts.approved} pass
+                    </span>
+                  )}
+                  {complianceCounts.flagged > 0 && (
+                    <span className="inline-flex items-center gap-1 text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100/60 text-[11px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      {complianceCounts.flagged} caution
+                    </span>
+                  )}
+                  {complianceCounts.blocked > 0 && (
+                    <span className="inline-flex items-center gap-1 text-rose-600 font-semibold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100/60 text-[11px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      {complianceCounts.blocked} blocked
+                    </span>
+                  )}
+                  {complianceCounts.pending > 0 && (
+                    <span className="inline-flex items-center gap-1 text-gray-600 font-semibold bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 text-[11px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                      {complianceCounts.pending} pending
+                    </span>
+                  )}
+                </>
               )}
-            </p>
+            </div>
             {isRunningCompliance && (
-              <span className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100/50">
+              <span className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100/50 shrink-0 ml-1">
                 <Spinner className="w-3 h-3 border-t-2 border-b-2 border-amber-600" />
                 <span className="text-[10px] uppercase tracking-wider font-bold">Reviewing</span>
               </span>

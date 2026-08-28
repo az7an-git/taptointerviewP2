@@ -105,45 +105,46 @@ export function QueueCandidateEntry({
     if (variant === "mobile") {
         return (
             <div
-                className={`p-4 flex flex-col gap-4 ${isActiveSession ? "bg-[#FFF5F2]/50" : "bg-white"}`}
+                className={`p-3.5 flex flex-col gap-3 ${isActiveSession ? "bg-[#FFF5F2]/50" : "hover:bg-[#FFF5F2]/40 bg-white transition-colors"}`}
             >
-                <div className="flex items-start gap-3">
-                    <span className="text-xs font-bold text-gray-400 mt-2.5 shrink-0 w-4 text-right">
-                        #{index + 1}
-                    </span>
-                    <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 shrink-0 text-sm">
-                        {initials}
-                    </div>
-                    <div className="min-w-0 flex-1 pt-0.5">
-                        {/* Row 1: Name */}
-                        {onViewDetails ? (
-                            <button
-                                onClick={() => onViewDetails(candidate)}
-                                className="font-bold text-gray-900 text-sm hover:text-[#FF512F] text-left cursor-pointer transition-colors w-full break-words"
-                                title={displayName}
-                            >
-                                {displayName}
-                            </button>
-                        ) : (
-                            <span
-                                className="font-bold text-gray-900 text-sm break-words block w-full"
-                                title={displayName}
-                            >
-                                {displayName}
-                            </span>
-                        )}
-                        {/* Row 2: Status + Joined */}
-                        <div className="flex items-center justify-between gap-2 mt-1">
-                            <div className="shrink-0">{statusBadge}</div>
-                            <p className="text-xs text-gray-500 font-medium whitespace-nowrap">
-                                Joined {joinedLabel}
-                            </p>
+                {/* Header Row: Avatar + Name (Left) & Status Badge + Joined Time (Right) */}
+                <div className="flex items-start justify-between gap-3 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-xs font-bold text-gray-400 shrink-0 w-4 text-right">
+                            #{index + 1}
+                        </span>
+                        <div className="w-9 h-9 bg-gradient-to-br from-[#FF512F]/15 to-[#FF7A00]/15 border border-[#FF512F]/20 rounded-full flex items-center justify-center font-bold text-[#FF512F] shrink-0 text-xs shadow-2xs">
+                            {initials}
                         </div>
+                        <div className="min-w-0 flex-1">
+                            {onViewDetails ? (
+                                <button
+                                    onClick={() => onViewDetails(candidate)}
+                                    className="font-bold text-gray-900 text-sm hover:text-[#FF512F] text-left cursor-pointer transition-colors block w-full truncate"
+                                    title={displayName}
+                                >
+                                    {displayName}
+                                </button>
+                            ) : (
+                                <span
+                                    className="font-bold text-gray-900 text-sm truncate block w-full"
+                                    title={displayName}
+                                >
+                                    {displayName}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                        <div>{statusBadge}</div>
+                        <span className="text-[11px] text-gray-500 font-medium whitespace-nowrap">
+                            Joined {joinedLabel}
+                        </span>
                     </div>
                 </div>
 
                 {(candidate.screeningAnswers.length > 0 || sessionDetailLabel || onStartInterview) && (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 pt-0.5">
                         {candidate.screeningAnswers.length > 0 && (
                             <ScreeningAnswersList
                                 answers={candidate.screeningAnswers}
@@ -171,7 +172,7 @@ export function QueueCandidateEntry({
 
     const rowHighlight = isActiveSession
         ? "bg-[#FFF5F2]/50"
-        : "hover:bg-gray-50/50";
+        : "hover:bg-[#FFF5F2]/40 group";
     const hasScreening = candidate.screeningAnswers.length > 0;
 
     return (
@@ -188,7 +189,7 @@ export function QueueCandidateEntry({
                     {/* Col 2 */}
                     <div className="flex flex-col min-w-0 border-r border-gray-200/50 py-3 sm:py-4 h-full">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 px-3 sm:px-6">
-                            <div className="w-7 h-7 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 shrink-0 text-[10px] sm:text-sm">
+                            <div className="w-7 h-7 sm:w-10 sm:h-10 bg-gradient-to-br from-[#FF512F]/15 to-[#FF7A00]/15 border border-[#FF512F]/20 rounded-full flex items-center justify-center font-bold text-[#FF512F] shrink-0 text-[10px] sm:text-sm shadow-2xs group-hover:from-[#FF512F]/25 group-hover:to-[#FF7A00]/25 transition-all">
                                 {initials}
                             </div>
                             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
@@ -212,13 +213,13 @@ export function QueueCandidateEntry({
                         </div>
 
                         {hasScreening && (
-                            <div className="px-3 sm:px-6 pt-3 sm:pt-4 pl-[calc(1.75rem+0.5rem+1.5rem)] sm:pl-[calc(2.5rem+0.75rem+1.5rem)] min-w-0">
+                            <div className="px-3 sm:px-6 pt-2.5 min-w-0">
                                 <ScreeningAnswersList answers={candidate.screeningAnswers} />
                             </div>
                         )}
 
                         {sessionDetailLabel && (
-                            <div className="px-3 sm:px-6 pt-3 sm:pt-4 pl-[calc(1.75rem+0.5rem+1.5rem)] sm:pl-[calc(2.5rem+0.75rem+1.5rem)] min-w-0">
+                            <div className="px-3 sm:px-6 pt-2 min-w-0">
                                 <p className="text-[10px] text-gray-400 font-medium truncate">
                                     {sessionDetailLabel}
                                 </p>

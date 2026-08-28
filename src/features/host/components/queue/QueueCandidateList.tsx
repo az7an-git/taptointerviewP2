@@ -44,7 +44,7 @@ export function QueueCandidateList(props: QueueCandidateListProps) {
 
     return (
         <>
-            <div className="sm:hidden divide-y divide-gray-200 bg-white overflow-y-auto max-h-[650px] scrollbar-brand">
+            <div className="sm:hidden divide-y divide-gray-200 bg-white">
                 {isEmpty ? (
                     <QueueEmptyState variant="mobile" />
                 ) : (
@@ -58,10 +58,10 @@ export function QueueCandidateList(props: QueueCandidateListProps) {
                 )}
             </div>
 
-            <div className="hidden sm:block overflow-y-auto max-h-[650px] bg-white scrollbar-brand">
+            <div className="hidden sm:block bg-white">
                 <table className="w-full table-fixed text-left border-collapse">
-                    <thead className="sticky top-0 z-10 bg-white shadow-sm">
-                        <tr className="border-b border-gray-200 bg-white text-[10px] sm:text-xs uppercase tracking-wider text-gray-500">
+                    <thead className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-xs shadow-2xs">
+                        <tr className="border-b border-gray-200 text-[10px] sm:text-xs uppercase tracking-wider text-gray-500 font-bold">
                             <th className="hidden sm:table-cell px-4 sm:px-6 py-3 font-bold whitespace-nowrap w-12 border-r border-gray-200/50">
                                 #
                             </th>
