@@ -36,7 +36,7 @@ export function CompanyJobsFilters({
 }: CompanyJobsFiltersProps) {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-2">
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative group flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#FF512F] transition-colors pointer-events-none" />
           <input
@@ -45,7 +45,7 @@ export function CompanyJobsFilters({
             placeholder='Search positions... (Press "/" to focus)'
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F]/60 focus:ring-1 focus:ring-[#FF512F]/40 focus:bg-white/10 transition-all duration-300 shadow-sm"
+            className="w-full h-[42px] pl-9 pr-9 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F]/60 focus:ring-1 focus:ring-[#FF512F]/40 focus:bg-white/10 transition-all duration-300 shadow-sm"
           />
           {searchQuery ? (
             <button
@@ -68,6 +68,7 @@ export function CompanyJobsFilters({
             icon={Briefcase}
             variant="ghost"
             hideLabel
+            buttonClassName="h-[42px] py-2.5"
             options={EMPLOYMENT_TYPE_FILTER_OPTIONS}
             value={employmentTypeFilter}
             onChange={onEmploymentTypeFilterChange}

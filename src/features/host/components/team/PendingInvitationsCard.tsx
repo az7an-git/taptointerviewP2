@@ -59,14 +59,14 @@ export function PendingInvitationsCard({
             return (
               <div
                 key={invite.id}
-                className="py-4 px-2 sm:px-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 hover:bg-gray-100 transition-colors cursor-pointer min-w-0"
+                className="group py-3.5 px-3 sm:px-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 hover:bg-[#FFF5F2]/60 hover:border-[#FF512F]/20 border border-transparent transition-all duration-200 cursor-pointer min-w-0 rounded-xl"
               >
                 <div className="flex items-start gap-3 min-w-0 flex-1 sm:min-w-[12rem]">
-                  <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-600 text-sm">
+                  <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-600 text-sm group-hover:from-[#FF512F]/20 group-hover:to-[#FF7A00]/20 group-hover:text-[#FF512F] transition-colors">
                     {initial}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-gray-900 text-xs sm:text-sm min-w-0 break-words">
+                    <div className="font-bold text-gray-900 group-hover:text-[#FF512F] transition-colors text-xs sm:text-sm min-w-0 break-words">
                       {displayName}
                     </div>
                     <div className="text-xs text-gray-500 font-medium flex items-start gap-1.5 mt-0.5 min-w-0">
@@ -83,9 +83,8 @@ export function PendingInvitationsCard({
                     </span>
 
                     <div
-                      className={`flex items-center gap-1 text-xs font-bold ${
-                        isAdmin ? "text-[#FF512F]" : "text-indigo-500"
-                      }`}
+                      className={`flex items-center gap-1 text-xs font-bold ${isAdmin ? "text-[#FF512F]" : "text-indigo-500"
+                        }`}
                     >
                       {isAdmin ? (
                         <Shield className="w-3.5 h-3.5" />

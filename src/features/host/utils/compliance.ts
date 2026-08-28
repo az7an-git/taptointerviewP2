@@ -12,7 +12,7 @@ const TIER_PRESENTATION: Record<
   Omit<CompliancePresentation, "tier" | "notes">
 > = {
   approved: {
-    label: "Clear",
+    label: "Pass",
     badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   flagged: {
@@ -36,9 +36,9 @@ const COMPLIANCE_STATUS_ALIASES: Record<
 > = {
   pass: { tier: "approved", label: "Pass" },
   passed: { tier: "approved", label: "Pass" },
-  approved: { tier: "approved", label: "Clear" },
-  approve: { tier: "approved", label: "Clear" },
-  clear: { tier: "approved", label: "Clear" },
+  approved: { tier: "approved", label: "Pass" },
+  approve: { tier: "approved", label: "Pass" },
+  clear: { tier: "approved", label: "Pass" },
   fail: { tier: "blocked", label: "Blocked" },
   failed: { tier: "blocked", label: "Blocked" },
   blocked: { tier: "blocked", label: "Blocked" },
@@ -127,7 +127,7 @@ export function formatComplianceSummary(
 ): string | null {
   const parts: string[] = [];
   if (counts.pending > 0) parts.push(`${counts.pending} pending`);
-  if (counts.approved > 0) parts.push(`${counts.approved} clear`);
+  if (counts.approved > 0) parts.push(`${counts.approved} pass`);
   if (counts.flagged > 0) parts.push(`${counts.flagged} caution`);
   if (counts.blocked > 0) parts.push(`${counts.blocked} blocked`);
   return parts.length > 0 ? parts.join(", ") : null;
