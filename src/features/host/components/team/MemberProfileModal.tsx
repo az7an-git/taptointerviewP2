@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -41,16 +41,16 @@ export function MemberProfileModal({
   onClose,
   onSave,
 }: MemberProfileModalProps) {
-  const [role, setRole] = useState("interviewer");
-  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [prevMemberId, setPrevMemberId] = useState<string | null>(null);
+  const [role, setRole] = useState(() => member?.role ?? "interviewer");
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>(() => member?.job_ids ?? []);
 
-  // Sync state when member changes (key on id so it fires even if reference is same)
-  useEffect(() => {
-    if (member) {
-      setRole(member.role ?? "interviewer");
-      setSelectedJobIds(member.job_ids ?? []);
-    }
-  }, [member?.id]);
+  // Synchronously compute active detail matching member.id during render pass before DOM paint (prevents layout jump)
+  if (member && member.id !== prevMemberId) {
+    setPrevMemberId(member.id);
+    setRole(member.role ?? "interviewer");
+    setSelectedJobIds(member.job_ids ?? []);
+  }
 
   useBodyScrollLock(isOpen);
 
@@ -237,9 +237,9 @@ export function MemberProfileModal({
                       <div
                         key={job.id}
                         onClick={() => handleToggleJob(job.id)}
-                        className={`flex items-center gap-3 p-2.5 border rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${isChecked
-                          ? "border-[#FF512F]/40 bg-[#FF512F]/5"
-                          : "border-gray-100 bg-white"
+                        className={`group flex items-center gap-3 p-2.5 border rounded-lg cursor-pointer transition-all ${isChecked
+                          ? "border-[#FF512F]/40 bg-[#FF512F]/10 hover:bg-[#FF512F]/15"
+                          : "border-gray-100 bg-white hover:bg-[#FFF5F2] hover:border-[#FF512F]/30"
                           }`}
                       >
                         <div
@@ -260,7 +260,7 @@ export function MemberProfileModal({
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-gray-800 truncate">{job.title}</div>
+                          <div className="text-xs font-bold text-gray-800 group-hover:text-[#FF512F] transition-colors truncate">{job.title}</div>
                           <div className="text-[10px] text-gray-400 truncate font-medium">
                             {job.department ? `${job.department} • ` : ""}
                             {job.type} • {job.location}

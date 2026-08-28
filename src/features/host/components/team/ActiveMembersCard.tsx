@@ -78,20 +78,20 @@ export function ActiveMembersCard({
                   aria-current={isCurrentUser ? "true" : undefined}
                   onClick={() => canManageMember && onViewProfile?.(member)}
                   className={cn(
-                    "py-4 px-2 sm:px-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 transition-colors min-w-0 rounded-lg",
+                    "group py-3.5 px-3 sm:px-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 transition-all duration-200 min-w-0 rounded-xl border border-transparent",
                     isCurrentUser
-                      ? "bg-gradient-to-r from-[#FF512F]/10 via-orange-50/60 to-transparent border border-[#FF512F]/20 shadow-sm"
+                      ? "bg-gradient-to-r from-[#FF512F]/10 via-orange-50/60 to-transparent border-[#FF512F]/20 shadow-sm"
                       : canManageMember
-                        ? "hover:bg-gray-100 cursor-pointer"
-                        : "hover:bg-gray-100"
+                        ? "hover:bg-[#FFF5F2]/60 hover:border-[#FF512F]/20 cursor-pointer"
+                        : "hover:bg-[#FFF5F2]/40"
                   )}
                 >
                   <div className="flex items-start gap-3 min-w-0 flex-1 sm:min-w-[12rem]">
-                    <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-600 text-sm">
+                    <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-600 text-sm group-hover:from-[#FF512F]/20 group-hover:to-[#FF7A00]/20 group-hover:text-[#FF512F] transition-colors">
                       {initial}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold text-gray-900 text-xs sm:text-sm min-w-0 break-words">
+                      <div className="font-bold text-gray-900 group-hover:text-[#FF512F] transition-colors text-xs sm:text-sm min-w-0 break-words">
                         {displayName}
                         {isOwner && (
                           <span className="ml-1.5 text-[10px] font-bold text-[#FF512F] uppercase">Owner</span>
