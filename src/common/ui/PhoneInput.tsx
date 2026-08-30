@@ -77,6 +77,16 @@ export function PhoneInput({
     setCountry(defaultCountry);
   }, [defaultCountry]);
 
+  // Sync country selector if external `value` prop is an E.164 number (e.g. loading saved profile number)
+  useEffect(() => {
+    if (value && value.startsWith("+")) {
+      const parsed = parsePhoneNumberFromString(value);
+      if (parsed?.country && parsed.country !== country) {
+        setCountry(parsed.country as Country);
+      }
+    }
+  }, [value, country]);
+
   const countryOptions = useMemo(
     () =>
       getCountries().map((code) => ({
@@ -128,10 +138,52 @@ export function PhoneInput({
   };
 
   const handleNationalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = parseIncompletePhoneNumber(event.target.value);
+    const rawValue = event.target.value;
+    if (!rawValue) {
+      onChange("");
+      return;
+    }
+
+    const trimmed = rawValue.trim();
+
+    // Try parsing as full E.164 / international number only if input explicitly starts with '+'
+    if (trimmed.startsWith("+")) {
+      const formatter = new AsYouType();
+      formatter.input(trimmed);
+      const parsedCountry = formatter.getCountry();
+      if (parsedCountry) {
+        if (parsedCountry !== country) {
+          setCountry(parsedCountry as Country);
+        }
+        const fullParsed = parsePhoneNumberFromString(trimmed);
+        onChange(fullParsed?.number || toE164(formatter.getNationalNumber() || "", parsedCountry as CountryCode));
+        return;
+      }
+    }
+
+    let digits = parseIncompletePhoneNumber(rawValue);
     if (!digits) {
       onChange("");
       return;
+    }
+
+    // If autofill included country code without '+', strip leading calling code if it matches current country
+    if (digits.startsWith(callingCode) && digits.length > (MAX_NATIONAL_LENGTHS[country] || 10)) {
+      digits = digits.slice(callingCode.length);
+    }
+
+    // Smart Detect: If input without '+' is invalid for current country, check if it forms a complete valid number for any other country (e.g. pasting US number in UK or UK number in Germany)
+    const candidateCurrent = toE164(digits, country as CountryCode);
+    const parsedCurrent = parsePhoneNumberFromString(candidateCurrent);
+    if (!parsedCurrent || !parsedCurrent.isValid()) {
+      const fullParsed = parsePhoneNumberFromString(`+${trimmed}`);
+      if (fullParsed && fullParsed.isValid() && fullParsed.country) {
+        if (fullParsed.country !== country) {
+          setCountry(fullParsed.country as Country);
+        }
+        onChange(fullParsed.number);
+        return;
+      }
     }
 
     // Limit digit input length based on country metadata to prevent typing extra numbers
@@ -165,9 +217,10 @@ export function PhoneInput({
       </span>
       <input
         id={id}
+        name="tel"
         type="tel"
         inputMode="tel"
-        autoComplete="tel-national"
+        autoComplete="tel tel-national"
         disabled={disabled}
         value={displayValue}
         onChange={handleNationalChange}

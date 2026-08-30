@@ -27,6 +27,7 @@ import {
   LiveScreeningQuestionResponse,
   PhoneVerificationStatus,
   NotificationSettings,
+  QueueSessionData,
 } from "@/types/job";
 
 const mapScreeningOptionFromBackend = (opt: any): ScreeningQuestionOption => ({
@@ -117,13 +118,18 @@ const mapApplicantFromBackend = (a: any): JobApplicant => {
     hostToken: a.video?.meeting_token || a.video?.token || a.host_token || a.hostToken || a.token || a.meeting_token,
     createdAt: a.created_at,
     updatedAt: a.updated_at,
-    participant: {
-      id: a.participant?.id,
-      firstName: a.participant?.first_name,
-      lastName: a.participant?.last_name,
-      email: a.participant?.email,
-      phone: a.participant?.phone,
-    },
+    interviewerId: a.interviewer_id ?? null,
+    isHost: a.is_host !== undefined ? Boolean(a.is_host) : undefined,
+    interviewInProgress: a.interview_in_progress !== undefined ? Boolean(a.interview_in_progress) : undefined,
+    participant: a.participant
+      ? {
+        id: a.participant.id,
+        firstName: a.participant.first_name,
+        lastName: a.participant.last_name,
+        email: a.participant.email,
+        phone: a.participant.phone,
+      }
+      : null,
   };
 };
 
@@ -201,6 +207,7 @@ const mapToFrontend = (backend: any): Job => {
     applicants: (backend.applicants || []).map(mapApplicantFromBackend),
     queueStatus: backend.queue_status ?? backend.queuePauseStatus,
     pendingCloseDecision: Boolean(backend.pending_close_decision),
+    canAdmitNext: backend.can_admit_next !== undefined ? Boolean(backend.can_admit_next) : undefined,
   };
 };
 
@@ -302,17 +309,21 @@ export const jobsApi = {
   getActiveQueues: async () => {
     const response = await authApi.get<{
       status: string;
-      data: { active_queues: any[] };
+      data: { active_queues: any[]; can_admit_next?: boolean };
     }>("/jobs/queues/active");
+
+    const globalCanAdmitNext = response.data.data?.can_admit_next ?? false;
 
     // MyQueuePage
     return {
+      canAdmitNext: globalCanAdmitNext,
       data: (response.data.data?.active_queues || []).map((aq) => ({
         id: aq.job_id,
         title: aq.title,
         location: aq.location,
         type: aq.employment_type ? (aq.employment_type.charAt(0).toUpperCase() + aq.employment_type.slice(1)) : "Full-time",
         status: "Active" as any,
+        canAdmitNext: aq.can_admit_next ?? globalCanAdmitNext,
         queueWindows: (aq.windows || aq.queue_windows || []).map(mapQueueWindowFromBackend),
         queuePauseStatus: aq.queue_pause_status as string | undefined,
         applicants: (aq.queue || []).map(mapApplicantFromBackend)
@@ -579,6 +590,18 @@ export const jobsApi = {
       status: response.data.status,
       data: applicant,
     };
+  },
+
+  /**
+   * Fetch session info for a specific queue entry.
+   * GET /api/v1/jobs/:jobId/queue/:queueEntryId/session
+   */
+  getQueueSession: async (jobId: string, queueEntryId: string) => {
+    const response = await authApi.get<{
+      status: string;
+      data: QueueSessionData;
+    }>(`/jobs/${jobId}/queue/${queueEntryId}/session`);
+    return response.data;
   },
 
   /**
@@ -936,14 +959,15 @@ export const jobsApi = {
     companySlug: string,
     jobId: string,
     phone: string,
-    screeningToken: string
+    screeningToken: string,
+    captchaToken: string
   ) => {
     const response = await publicApi.post<{
       status: string;
       data: PhoneVerificationStatus;
     }>(
       `/jobs/company/${companySlug}/${jobId}/phone-verification/request`,
-      { phone },
+      { phone, captcha_token: captchaToken },
       { headers: { Authorization: `Bearer ${screeningToken}` } }
     );
     return response.data;
@@ -957,14 +981,15 @@ export const jobsApi = {
   resendPhoneVerification: async (
     companySlug: string,
     jobId: string,
-    screeningToken: string
+    screeningToken: string,
+    captchaToken: string
   ) => {
     const response = await publicApi.post<{
       status: string;
       data: PhoneVerificationStatus;
     }>(
       `/jobs/company/${companySlug}/${jobId}/phone-verification/resend`,
-      {},
+      { captcha_token: captchaToken },
       { headers: { Authorization: `Bearer ${screeningToken}` } }
     );
     return response.data;
