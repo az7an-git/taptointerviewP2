@@ -236,13 +236,15 @@ export function DashboardPage() {
           ) : activeJobs.length === 0 ? (
             <div className="py-6 text-center text-sm text-gray-500 font-medium space-y-2">
               <p>No active job postings.</p>
-              <Link
-                to={getPostNewJobHref(basePath)}
-                state={POST_JOB_NEW_INTENT}
-                className="inline-block text-xs text-[#FF512F] font-bold hover:underline"
-              >
-                Post one now &rarr;
-              </Link>
+              {user?.role !== 'interviewer' && (
+                <Link
+                  to={getPostNewJobHref(basePath)}
+                  state={POST_JOB_NEW_INTENT}
+                  className="inline-block text-xs text-[#FF512F] font-bold hover:underline"
+                >
+                  Post one now &rarr;
+                </Link>
+              )}
             </div>
           ) : (
             activeJobs.slice(0, 7).map((job) => (

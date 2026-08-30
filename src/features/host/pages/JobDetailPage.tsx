@@ -34,18 +34,28 @@ export default function JobDetailPage() {
 
   const candidates = useMemo(() => {
     if (!job?.applicants) return [];
-    return job.applicants.map((app) => ({
-      id: app.queueEntryId,
-      name: `${app.participant.firstName || ""} ${app.participant.lastName || ""}`.trim(),
-      status: app.status.charAt(0).toUpperCase() + app.status.slice(1).toLowerCase(),
-      joinTime: app.joinedAt
-        ? new Date(app.joinedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : "Unknown",
-      avatar: (app.participant.firstName?.[0] || "?").toUpperCase(),
-      admissionExpiresAt: app.admissionExpiresAt ?? null,
-      outcome: app.outcome,
-      raw: app,
-    }));
+    return job.applicants.map((app) => {
+      const p = app.participant;
+      const name = p
+        ? `${p.firstName || ""} ${p.lastName || ""}`.trim() || "Candidate"
+        : (app.interviewInProgress ? "Hidden (Active Session)" : "Candidate");
+      const avatar = p
+        ? (p.firstName?.[0] || "?").toUpperCase()
+        : (app.interviewInProgress ? "🔒" : "?");
+
+      return {
+        id: app.queueEntryId,
+        name,
+        status: app.status.charAt(0).toUpperCase() + app.status.slice(1).toLowerCase(),
+        joinTime: app.joinedAt
+          ? new Date(app.joinedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "Unknown",
+        avatar,
+        admissionExpiresAt: app.admissionExpiresAt ?? null,
+        outcome: app.outcome,
+        raw: app,
+      };
+    });
   }, [job?.applicants]);
 
   const activeCandidatesCount = useMemo(() => {
