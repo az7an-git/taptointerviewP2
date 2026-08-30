@@ -45,7 +45,7 @@ export function ApplicantDetailsModal({
 
     setDetailedApplicant(applicant);
 
-    if (!jobId) return;
+    if (!jobId || !applicant?.participant?.id) return;
 
     setIsLoading(true);
     let active = true;
@@ -106,8 +106,13 @@ export function ApplicantDetailsModal({
     );
   };
 
-  const name = `${currentApplicant.participant.firstName || ""} ${currentApplicant.participant.lastName || ""}`.trim() || "Unknown Candidate";
-  const initials = ((currentApplicant.participant.firstName?.[0] || "") + (currentApplicant.participant.lastName?.[0] || "")).toUpperCase() || "?";
+  const p = currentApplicant.participant;
+  const name = p
+    ? `${p.firstName || ""} ${p.lastName || ""}`.trim() || "Unknown Candidate"
+    : "Hidden (Active Session)";
+  const initials = p
+    ? ((p.firstName?.[0] || "") + (p.lastName?.[0] || "")).toUpperCase() || "?"
+    : "🔒";
 
   return createPortal(
     <div
@@ -148,26 +153,32 @@ export function ApplicantDetailsModal({
                 <User className="w-3.5 h-3.5" />
                 Participant Profile
               </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-start text-xs gap-4">
-                  <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                    <Mail className="w-3 h-3 text-gray-400" />
-                    Email:
-                  </span>
-                  <a href={`mailto:${currentApplicant.participant.email}`} className="text-[#FF512F] hover:underline font-bold break-all text-right">
-                    {currentApplicant.participant.email}
-                  </a>
+              {p ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start text-xs gap-4">
+                    <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-gray-400" />
+                      Email:
+                    </span>
+                    <a href={`mailto:${p.email}`} className="text-[#FF512F] hover:underline font-bold break-all text-right">
+                      {p.email}
+                    </a>
+                  </div>
+                  <div className="flex justify-between items-start text-xs gap-4">
+                    <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-gray-400" />
+                      Phone:
+                    </span>
+                    <span className="text-gray-700 font-bold break-all text-right">
+                      {p.phone || "N/A"}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-start text-xs gap-4">
-                  <span className="text-gray-400 font-medium shrink-0 flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-gray-400" />
-                    Phone:
-                  </span>
-                  <span className="text-gray-700 font-bold break-all text-right">
-                    {currentApplicant.participant.phone || "N/A"}
-                  </span>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 leading-relaxed font-medium">
+                  🔒 <strong>Active Session Protected:</strong> Candidate profile details are hidden for non-hosts while an interview is in progress.
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
@@ -219,7 +230,7 @@ export function ApplicantDetailsModal({
               onNotesUpdated={(updated) => {
                 setDetailedApplicant((prev) => (prev ? { ...prev, interviewNotes: updated } : prev));
               }}
-              readOnly={readOnly}
+              readOnly={readOnly || !p || currentApplicant.isHost === false}
             />
           </div>
 

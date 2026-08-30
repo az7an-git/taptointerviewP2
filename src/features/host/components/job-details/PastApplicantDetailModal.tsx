@@ -181,15 +181,15 @@ export default function PastApplicantDetailModal({
     };
 
     const name = currentDetail
-        ? `${currentDetail.participant.first_name || ""} ${currentDetail.participant.last_name || ""}`.trim() || "Unknown Candidate"
+        ? `${currentDetail.participant?.first_name || ""} ${currentDetail.participant?.last_name || ""}`.trim() || "Unknown Candidate"
         : previewApplicant
-            ? `${previewApplicant.participant.first_name || ""} ${previewApplicant.participant.last_name || ""}`.trim() || "Unknown Candidate"
+            ? `${previewApplicant.participant?.first_name || ""} ${previewApplicant.participant?.last_name || ""}`.trim() || "Unknown Candidate"
             : "Applicant Details";
 
     const initials = currentDetail
-        ? ((currentDetail.participant.first_name?.[0] || "") + (currentDetail.participant.last_name?.[0] || "")).toUpperCase() || "?"
+        ? ((currentDetail.participant?.first_name?.[0] || "") + (currentDetail.participant?.last_name?.[0] || "")).toUpperCase() || "?"
         : previewApplicant
-            ? ((previewApplicant.participant.first_name?.[0] || "") + (previewApplicant.participant.last_name?.[0] || "")).toUpperCase() || "?"
+            ? ((previewApplicant.participant?.first_name?.[0] || "") + (previewApplicant.participant?.last_name?.[0] || "")).toUpperCase() || "?"
             : "?";
 
     return createPortal(
@@ -292,10 +292,10 @@ export default function PastApplicantDetailModal({
                                                 Email:
                                             </span>
                                             <a
-                                                href={`mailto:${currentDetail.participant.email}`}
+                                                href={`mailto:${currentDetail.participant?.email || ""}`}
                                                 className="text-[#FF512F] hover:underline font-bold break-all text-right"
                                             >
-                                                {currentDetail.participant.email}
+                                                {currentDetail.participant?.email || "N/A"}
                                             </a>
                                         </div>
                                         <div className="flex justify-between items-start text-xs gap-4">
@@ -304,7 +304,7 @@ export default function PastApplicantDetailModal({
                                                 Phone:
                                             </span>
                                             <span className="text-gray-700 font-bold break-all text-right">
-                                                {currentDetail.participant.phone || "N/A"}
+                                                {currentDetail.participant?.phone || "N/A"}
                                             </span>
                                         </div>
                                     </div>

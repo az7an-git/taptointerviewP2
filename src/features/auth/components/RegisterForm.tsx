@@ -11,6 +11,10 @@ import { TIMEZONE_OPTIONS } from "@/common/utils/timezone";
 import { PhoneInput } from "@/common/ui/PhoneInput";
 import { isValidPhoneNumber } from "@/common/utils/phone";
 import { OtpInput } from "@/common/ui/OtpInput";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -42,6 +46,8 @@ export default function RegisterForm() {
   const [isTimezoneOpen, setIsTimezoneOpen] = useState(false);
   const [isEmailReadOnly, setIsEmailReadOnly] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,13 +88,17 @@ export default function RegisterForm() {
       }
       setIsLoading(true);
       try {
-        await authService.requestPhoneOtp(phone.trim(), smsConsent);
+        await authService.requestPhoneOtp(phone.trim(), smsConsent, captchaToken!);
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
         setIsVerifyingPhone(true);
         setResendCooldown(30);
         setAttempts(0);
         setIsLockedOut(false);
         toast.info("Verification code sent to your new number.");
       } catch (err: any) {
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
         const errorMsg = err.response?.data?.data || err.response?.data?.message || "Failed to update phone number.";
         setErrors({ form: errorMsg });
       } finally {
@@ -203,10 +213,14 @@ export default function RegisterForm() {
   const handleResendOtp = async () => {
     setIsLoading(true);
     try {
-      await authService.resendPhoneOtp();
+      await authService.resendPhoneOtp(captchaToken!);
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       toast.success("Verification code resent!");
       setResendCooldown(30);
     } catch (err: any) {
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       toast.error(err.response?.data?.data || err.response?.data?.message || "Failed to resend code.");
     } finally {
       setIsLoading(false);
@@ -316,17 +330,33 @@ export default function RegisterForm() {
             </div>
           )}
 
-          <div className="flex items-center justify-end text-xs font-medium">
+          <div className="flex flex-col items-end gap-2 text-xs font-medium">
             {resendCooldown > 0 ? (
               <span className="text-gray-400">Resend in {resendCooldown}s</span>
             ) : (
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                className="text-orange-400 hover:text-orange-300 font-bold cursor-pointer hover:underline"
-              >
-                Resend Code
-              </button>
+              <>
+                {/* Turnstile for resend */}
+                <div className="w-full flex justify-center overflow-hidden">
+                  <div className="scale-90 origin-center">
+                    <Turnstile
+                      ref={turnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={(token) => setCaptchaToken(token)}
+                      onExpire={() => setCaptchaToken(null)}
+                      onError={() => { setCaptchaToken(null); toast.error("Security check failed. Please refresh and try again."); }}
+                      options={{ theme: "dark", size: "flexible" }}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={!captchaToken || isLoading}
+                  className="text-orange-400 hover:text-orange-300 font-bold cursor-pointer hover:underline disabled:opacity-50"
+                >
+                  Resend Code
+                </button>
+              </>
             )}
           </div>
 

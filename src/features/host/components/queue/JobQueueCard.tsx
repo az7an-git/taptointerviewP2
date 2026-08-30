@@ -115,8 +115,14 @@ export function JobQueueCard({
         jobTitle: job.title,
     });
     const waitingCount = candidates.filter(c => normalizeQueueStatus(c.status) === "waiting").length;
-    const admitBlocked = candidates.some((c) => blocksAdmitNext(c.status));
-    const sessionCandidate = findSessionCandidate(localApplicants);
+    const sessionCandidate = findSessionCandidate(localApplicants, user?.id);
+
+    const userHasActiveSession = Boolean(
+        sessionCandidate &&
+        sessionCandidate.isHost !== false &&
+        blocksAdmitNext(sessionCandidate.status)
+    );
+    const admitBlocked = job.canAdmitNext === false || userHasActiveSession;
 
     const {
         sessionAction,
@@ -431,8 +437,8 @@ export function JobQueueCard({
                                 : undefined)
                         }
                         className={`w-full sm:w-auto sm:min-w-0 sm:max-w-[240px] md:max-w-[280px] text-white hover:bg-[#E64A2E] px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px] sm:min-h-0 overflow-hidden ${isCandidateReady && !admitBlocked && !isQueuePaused
-                                ? "animate-pulse shadow-lg shadow-[#FF512F]/40 border-2 border-orange-400 ring-2 ring-[#FF512F]/30 bg-gradient-to-r from-[#FF512F] to-[#FF7A00]"
-                                : "bg-[#FF512F]"
+                            ? "animate-pulse shadow-lg shadow-[#FF512F]/40 border-2 border-orange-400 ring-2 ring-[#FF512F]/30 bg-gradient-to-r from-[#FF512F] to-[#FF7A00]"
+                            : "bg-[#FF512F]"
                             }`}
                     >
                         {isAdmitting ? (
@@ -522,7 +528,21 @@ export function JobQueueCard({
                 </div>
             )}
 
-            {sessionCandidate && sessionStatus === "in_session" && (
+            {sessionCandidate && (sessionCandidate.isHost === false || sessionCandidate.participant === null) && (sessionStatus === "in_session" || sessionCandidate.interviewInProgress) && (
+                <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl shadow-xs text-left">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xl">🔒</span>
+                        <div>
+                            <h3 className="font-bold text-amber-900 text-sm">Interview in Progress</h3>
+                            <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                                Another recruiter is currently interviewing this candidate. Your view remains read-only to protect session integrity.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {sessionCandidate && sessionCandidate.isHost !== false && sessionCandidate.participant !== null && sessionStatus === "in_session" && (
                 <LiveInterviewPanel
                     jobId={job.id}
                     candidate={sessionCandidate}
@@ -532,7 +552,7 @@ export function JobQueueCard({
                 />
             )}
 
-            {sessionCandidate && sessionStatus === "pending_outcome" && (
+            {sessionCandidate && sessionCandidate.isHost !== false && sessionStatus === "pending_outcome" && (
                 <PendingOutcomeBanner
                     candidate={sessionCandidate}
                     isLoading={isSavingOutcome}
@@ -540,7 +560,7 @@ export function JobQueueCard({
                 />
             )}
 
-            {sessionCandidate && (
+            {sessionCandidate && sessionCandidate.isHost !== false && (
                 <InterviewOutcomeModal
                     isOpen={outcomeModalOpen && sessionStatus === "pending_outcome"}
                     candidate={sessionCandidate}
