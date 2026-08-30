@@ -77,8 +77,14 @@ export function QueueCandidateEntry({
         onWindowExpired
     );
 
-    const displayName = getParticipantDisplayName(candidate.participant);
-    const initials = getParticipantInitials(candidate.participant);
+    const displayName = getParticipantDisplayName(
+        candidate.participant,
+        candidate.interviewInProgress ? "Hidden (Active Session)" : "Candidate"
+    );
+    const initials = getParticipantInitials(
+        candidate.participant,
+        candidate.interviewInProgress ? "🔒" : "C"
+    );
     const joinedLabel = formatJoinedTime(candidate.joinedAt);
     const sessionDetailLabel = getSessionDetailLabel(candidate);
 
@@ -143,9 +149,9 @@ export function QueueCandidateEntry({
                     </div>
                 </div>
 
-                {(candidate.screeningAnswers.length > 0 || sessionDetailLabel || onStartInterview) && (
+                {((candidate.screeningAnswers.length > 0 && !isActiveSession) || sessionDetailLabel || onStartInterview) && (
                     <div className="flex flex-col gap-2 pt-0.5">
-                        {candidate.screeningAnswers.length > 0 && (
+                        {candidate.screeningAnswers.length > 0 && !isActiveSession && (
                             <ScreeningAnswersList
                                 answers={candidate.screeningAnswers}
                             />
@@ -173,7 +179,7 @@ export function QueueCandidateEntry({
     const rowHighlight = isActiveSession
         ? "bg-[#FFF5F2]/50"
         : "hover:bg-[#FFF5F2]/40 group";
-    const hasScreening = candidate.screeningAnswers.length > 0;
+    const hasScreening = candidate.screeningAnswers.length > 0 && !isActiveSession;
 
     return (
         <tr className={`transition-colors align-top ${rowHighlight}`}>

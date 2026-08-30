@@ -21,8 +21,10 @@ function buildEntryProps(
 ) {
     const isSessionCandidate =
         ctx.sessionCandidateId === candidate.queueEntryId;
+    const isHostForCandidate = candidate.isHost !== false && candidate.participant !== null;
     const canStart =
         isSessionCandidate &&
+        isHostForCandidate &&
         (ctx.sessionStatus === "admitted" || ctx.sessionStatus === "confirmed");
 
     return {

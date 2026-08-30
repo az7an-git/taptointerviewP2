@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PhoneInput } from "@/common/ui/PhoneInput";
 import { isValidPhoneNumber } from "@/common/utils/phone";
 import { authService } from "@/services/authService";
@@ -10,6 +10,11 @@ import ConfirmationModal from "@/common/ui/ConfirmationModal";
 import NotificationSettingsSkeleton from "./NotificationSettingsSkeleton";
 // import NotificationAttemptsLog from "./NotificationAttemptsLog";
 import { OtpInput } from "@/common/ui/OtpInput";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 
 interface NotificationSettingsFormProps {
     user: any;
@@ -30,6 +35,9 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
     const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
     const [isRemovingPhone, setIsRemovingPhone] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const turnstileRef = useRef<TurnstileInstance>(null);
+    const isMobile = useMediaQuery("(max-width: 639px)");
 
     // Preference states
     const [followMe, setFollowMe] = useState(false);
@@ -106,14 +114,18 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
         setIsSendingOtp(true);
         setVerificationError("");
         try {
-            // Request verification code directly
-            await authService.requestPhoneOtp(phone, smsConsent);
+            await authService.requestPhoneOtp(phone, smsConsent, captchaToken!);
+            // Reset Turnstile — token is one-time use
+            setCaptchaToken(null);
+            turnstileRef.current?.reset();
             toast.success("Verification code sent via SMS!");
             setIsVerifying(true);
             setResendCooldown(30);
             setAttempts(0);
             setIsLockedOut(false);
         } catch (err: any) {
+            setCaptchaToken(null);
+            turnstileRef.current?.reset();
             console.error(err);
             toast.error(err.response?.data?.data || err.response?.data?.message || "Failed to send verification code.");
         } finally {
@@ -158,10 +170,15 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
         setIsSendingOtp(true);
         setVerificationError("");
         try {
-            await authService.resendPhoneOtp();
+            await authService.resendPhoneOtp(captchaToken!);
+            // Reset Turnstile — token is one-time use
+            setCaptchaToken(null);
+            turnstileRef.current?.reset();
             toast.success("Verification code resent successfully!");
             setResendCooldown(30);
         } catch (err: any) {
+            setCaptchaToken(null);
+            turnstileRef.current?.reset();
             console.error(err);
             toast.error("Failed to resend verification code.");
         } finally {
@@ -219,9 +236,9 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                 <p className="text-xs text-gray-500 font-medium">Manage alert channels and notification preferences.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-5xl">
                 {/* Left Card: Mobile Phone Verification */}
-                <div className="bg-gray-50/50 border border-gray-100 p-4 sm:p-5 rounded-xl space-y-4">
+                <div className="bg-gray-50/50 border border-gray-100 p-2.5 sm:p-5 rounded-xl space-y-4">
                     <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-start gap-1.5">
                         <MessageSquare className="w-4 h-4 text-[#FF512F] mt-0.5 flex-shrink-0" />
                         <span>SMS Mobile Verification</span>
@@ -282,10 +299,24 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                             <div className="block mt-0.5 text-[10px] text-gray-400">Message and data rates may apply. Reply STOP to opt out.</div>
                                         </label>
                                     </div>
+                                    {/* Turnstile CAPTCHA for initial send */}
+                                    {hasPhoneInput && smsConsent && (
+                                        <div className="w-full py-1 flex justify-center">
+                                            <Turnstile
+                                                key={`turnstile-initial-${isMobile ? "compact" : "flexible"}`}
+                                                ref={turnstileRef}
+                                                siteKey={TURNSTILE_SITE_KEY}
+                                                onSuccess={(token) => setCaptchaToken(token)}
+                                                onExpire={() => setCaptchaToken(null)}
+                                                onError={() => { setCaptchaToken(null); toast.error("Security check failed. Please refresh and try again."); }}
+                                                options={{ theme: "light", size: isMobile ? "compact" : "flexible" }}
+                                            />
+                                        </div>
+                                    )}
                                     <Button
                                         type="button"
                                         onClick={handleSendOtp}
-                                        disabled={isSendingOtp || !hasPhoneInput || !smsConsent}
+                                        disabled={isSendingOtp || !hasPhoneInput || !smsConsent || !captchaToken}
                                         className="w-full justify-center gap-1.5 text-xs py-2 h-9 cursor-pointer font-bold bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white border-transparent shadow-sm"
                                     >
                                         {isSendingOtp ? (
@@ -348,18 +379,32 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                                             </div>
                                         )}
 
-                                        <div className="flex items-center justify-end text-xs font-medium">
+                                        <div className="flex flex-col items-end gap-2 text-xs font-medium">
                                             {resendCooldown > 0 ? (
                                                 <span className="text-gray-400">Resend in {resendCooldown}s</span>
                                             ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleResendOtp}
-                                                    disabled={isSendingOtp}
-                                                    className="text-[#FF512F] hover:text-[#FF7A00] font-bold cursor-pointer hover:underline"
-                                                >
-                                                    Resend Code
-                                                </button>
+                                                <>
+                                                    {/* Turnstile for resend */}
+                                                    <div className="w-full py-1 flex justify-center">
+                                                        <Turnstile
+                                                            key={`turnstile-resend-${isMobile ? "compact" : "flexible"}`}
+                                                            ref={turnstileRef}
+                                                            siteKey={TURNSTILE_SITE_KEY}
+                                                            onSuccess={(token) => setCaptchaToken(token)}
+                                                            onExpire={() => setCaptchaToken(null)}
+                                                            onError={() => { setCaptchaToken(null); toast.error("Security check failed. Please refresh and try again."); }}
+                                                            options={{ theme: "light", size: isMobile ? "compact" : "flexible" }}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleResendOtp}
+                                                        disabled={isSendingOtp || !captchaToken}
+                                                        className="text-[#FF512F] hover:text-[#FF7A00] font-bold cursor-pointer hover:underline disabled:opacity-50"
+                                                    >
+                                                        Resend Code
+                                                    </button>
+                                                </>
                                             )}
                                         </div>
 
@@ -491,6 +536,6 @@ export default function NotificationSettingsForm({ refreshUser }: NotificationSe
                 isLoading={isRemovingPhone}
                 variant="danger"
             />
-        </div>
+        </div >
     );
 }
