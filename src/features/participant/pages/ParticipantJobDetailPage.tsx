@@ -157,7 +157,7 @@ export default function ParticipantJobDetailPage() {
                   </h1>
                   {isOpen ? (
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20">
-                      Queue open
+                      OPEN
                     </span>
                   ) : isScheduled ? (
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-full border border-amber-500/20">
@@ -256,7 +256,7 @@ export default function ParticipantJobDetailPage() {
                       onClick={handleApply}
                       className="w-full bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white font-bold px-5 py-3.5 rounded-lg transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#FF512F]/10 hover:shadow-[#FF512F]/20 cursor-pointer text-sm"
                     >
-                      <span className="text-center leading-snug">Apply for this role</span>
+                      <span className="text-center leading-snug">See If I Qualify</span>
                       <ArrowRight className="w-4 h-4 shrink-0" />
                     </button>
                   </>

@@ -172,39 +172,39 @@ export default function ScreeningQuestionsPage() {
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tight leading-tight">{jobTitle}</h1>
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-white/5">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <ClipboardCheck className="w-4 h-4 text-[#FF512F]" />
+        <div className="space-y-3 pt-3 border-t border-white/5">
+          <div className="flex items-start gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <ClipboardCheck className="w-3.5 h-3.5 text-[#FF512F]" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wide">Quick Qualification</h3>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Please answer the qualification questions. These help the recruiters understand your current availability and alignment with the role.
+              <h3 className="text-xs font-bold text-white uppercase tracking-wide">QUICK QUALIFICATION</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
+                Answer a few questions to confirm eligibility.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Clock className="w-4 h-4 text-amber-400" />
+          <div className="flex items-start gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wide">Join the Waiting Room</h3>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Submitting your responses qualifies you to enter the live waiting room. You will be notified automatically via SMS or email when called.
+              <h3 className="text-xs font-bold text-white uppercase tracking-wide">JOIN THE WAITING ROOM</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
+                If qualified, verify your details and enter the live queue.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <ArrowRight className="w-4 h-4 text-blue-400" />
+          <div className="flex items-start gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <ArrowRight className="w-3.5 h-3.5 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wide">Next Up: Contact & Verification</h3>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Next, you will set up your contact details and verify your mobile phone to receive alerts when called.
+              <h3 className="text-xs font-bold text-white uppercase tracking-wide">JOIN LIVE INTERVIEW</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
+                When called, tap your interview link and connect.
               </p>
             </div>
           </div>
@@ -219,10 +219,12 @@ export default function ScreeningQuestionsPage() {
 
   const rightPanel = (
     <>
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-white">Pre-Interview Qualification</h2>
-        <p className="text-xs text-gray-400 font-medium mt-1">Please fill in the quick questionnaire below to join the waiting room.</p>
-      </div>
+      {!isSuccess && (
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-white">Pre-Interview Qualification</h2>
+          <p className="text-xs text-gray-400 font-medium mt-1">Please fill in the quick questionnaire below to join the waiting room.</p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-12 flex flex-col items-center justify-center gap-3">
@@ -278,7 +280,9 @@ export default function ScreeningQuestionsPage() {
               <ClipboardCheck className="w-6 h-6 text-emerald-500" />
             </div>
           </div>
-          Congratulations! You meet the basic qualifications for this role.
+          <p className="text-sm text-gray-300 font-medium leading-relaxed max-w-md mx-auto">
+            Great news, you meet the basic qualifications for this position. Next, enter your contact details so we can notify you when it’s your turn to interview.
+          </p>
           <div className="pt-6">
             <button
               className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 transform hover:scale-[1.01] cursor-pointer text-sm"
@@ -393,12 +397,8 @@ export default function ScreeningQuestionsPage() {
                     : typeof ans === 'string' && ans.trim() !== '';
                 })}
               >
-                {isSubmitting ? (
-                  <Spinner className="w-4 h-4 border-2 border-white border-t-transparent" />
-                ) : (
-                  <ClipboardCheck className="w-4 h-4" />
-                )}
-                <span>{isSubmitting ? "Submitting..." : "Next Step: Your Details"}</span>
+                {isSubmitting && <Spinner className="w-4 h-4 border-2 border-white border-t-transparent" />}
+                <span>{isSubmitting ? "Submitting..." : "Check My Qualification"}</span>
                 {!isSubmitting && <ArrowRight className="w-4 h-4" />}
               </button>
               <div

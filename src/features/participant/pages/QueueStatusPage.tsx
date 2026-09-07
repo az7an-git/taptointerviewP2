@@ -269,10 +269,10 @@ export default function QueueStatusPage() {
   const statusHint = (() => {
     const status = queueData?.status?.toLowerCase();
     if (status === "called") {
-      return "Check your email and open the admission link in a new tab to confirm your spot.";
+      return "Check your text or email and open the admission link in a new tab to confirm your spot.";
     }
     if (status === "confirmed" || status === "admitted") {
-      return "Admission confirmed. Continue in the tab where you opened your email link.";
+      return "Admission confirmed. Continue in the tab where you opened your interview link.";
     }
     if (status === "in_session") {
       return "Your interview is active in the tab where you confirmed admission. You can close this tab.";
@@ -410,7 +410,7 @@ export default function QueueStatusPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Action Required</p>
                 <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Your Turn Has Arrived!</h2>
                 <p className="text-sm text-gray-400 font-medium max-w-sm mx-auto leading-relaxed">
-                  We've sent a secure admission link to your email. Please click the link to confirm your spot.
+                  We've sent a secure admission link via text or email. Please click the link to confirm your spot.
                 </p>
               </div>
               <div className="text-2xl font-black text-[#FF512F] tabular-nums">
@@ -432,7 +432,7 @@ export default function QueueStatusPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Admission Confirmed</p>
                 <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">You're In!</h2>
                 <p className="text-sm text-gray-400 font-medium max-w-sm mx-auto">
-                  Your spot has been secured. Return to the tab where you opened your email link, the host will start your session there.
+                  Your spot has been secured. Return to the tab where you opened your interview link, the host will start your session there.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-600">
@@ -552,7 +552,7 @@ export default function QueueStatusPage() {
                   <div className="max-w-xl mx-auto bg-blue-500/10 border border-blue-500/25 rounded-xl p-3.5 flex items-start gap-3 text-left shadow-sm">
                     <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                     <p className="text-xs text-blue-200/90 leading-relaxed font-medium">
-                      <strong>Queue Position Confirmed:</strong> You are currently at <strong>position #{position}</strong> in line. Stay on this page, we will alert you via SMS and/or email as soon as your turn arrives.
+                      <strong>Queue Position Confirmed:</strong> You’re currently #{position} in line. We’ll notify you by text or email when it’s your turn to interview.
                     </p>
                   </div>
                 )}
@@ -563,7 +563,7 @@ export default function QueueStatusPage() {
                     <div className="flex items-start gap-2.5">
                       <BellRing className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                       <p className="text-xs text-amber-200/90 leading-relaxed font-medium">
-                        <strong>Waiting Room Guidance:</strong> Keep this window open and watch closely for incoming SMS or email alerts so you can respond immediately when called.
+                        <strong>Stay Ready:</strong> Keep this page open or return anytime through the secure link in your interview alert. Once called, you’ll have 90 seconds to join.
                       </p>
                     </div>
                     <button
