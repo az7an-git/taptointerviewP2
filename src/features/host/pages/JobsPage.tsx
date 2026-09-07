@@ -188,7 +188,7 @@ export default function JobsPage() {
             <p className="text-gray-500 font-medium">
               {hasActiveFilters ? "No job postings match your filters." : "No job postings found."}
             </p>
-            {!hasActiveFilters && (
+            {!hasActiveFilters && user?.role !== 'interviewer' && (
               <Link
                 to={getPostNewJobHref(basePath)}
                 state={POST_JOB_NEW_INTENT}
