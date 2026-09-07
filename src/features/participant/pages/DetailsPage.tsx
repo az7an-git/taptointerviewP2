@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, User, Mail, ShieldCheck, UserPlus, PauseCircle, XCircle, Info, PhoneCall, CheckCircle2, Lock, Clock, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { ParticipantTwoPanelLayout } from "../components";
 import { getParticipantErrorMessage } from "../utils/participantErrorMessage";
 import { jobsApi } from "@/api/jobsApi";
@@ -11,6 +13,8 @@ import { OtpInput } from "@/common/ui/OtpInput";
 import { useRealtimeChannel } from "@/hooks/useRealtimeChannel";
 import { isValidPhoneNumber } from "@/common/utils/phone";
 import { PhoneVerificationStatus } from "@/types/job";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
 
 export default function DetailsPage() {
   const { slug } = useParams();
@@ -34,6 +38,8 @@ export default function DetailsPage() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [resendSeconds, setResendSeconds] = useState(0);
   const resendTimerRef = useRef<any>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const companyName = localStorage.getItem("selectedCompanyName") || (slug && slug !== ":"
     ? slug.charAt(0).toUpperCase() + slug.slice(1).split("-")[0]
@@ -88,13 +94,25 @@ export default function DetailsPage() {
 
   const extractVerificationPayload = (res: any): PhoneVerificationStatus | null => {
     if (!res) return null;
-    if (res.data && typeof res.data === "object" && "verification_attempts_remaining" in res.data) {
-      return res.data;
+    const dataObj = (res.data && typeof res.data === "object" && "verification_attempts_remaining" in res.data)
+      ? res.data
+      : (typeof res === "object" && "verification_attempts_remaining" in res)
+        ? res
+        : res.data || res;
+
+    if (dataObj && typeof dataObj === "object") {
+      return {
+        verified_phone: dataObj.verified_phone ?? null,
+        phone_verified_at: dataObj.phone_verified_at ?? null,
+        phone_verification_pending: dataObj.phone_verification_pending ?? true,
+        verification_expires_at: dataObj.verification_expires_at ?? null,
+        resend_available_at: dataObj.resend_available_at ?? null,
+        phone_verification_locked: Boolean(dataObj.phone_verification_locked),
+        phone_verification_locked_until: dataObj.phone_verification_locked_until ?? null,
+        verification_attempts_remaining: typeof dataObj.verification_attempts_remaining === "number" ? dataObj.verification_attempts_remaining : 5,
+      };
     }
-    if (typeof res === "object" && "verification_attempts_remaining" in res) {
-      return res as PhoneVerificationStatus;
-    }
-    return res.data || res;
+    return null;
   };
 
   // Request SMS OTP
@@ -110,7 +128,10 @@ export default function DetailsPage() {
 
     setIsRequestingOtp(true);
     try {
-      const res = await jobsApi.requestPhoneVerification(slug, jobId, details.phone, screeningToken);
+      const res = await jobsApi.requestPhoneVerification(slug, jobId, details.phone, screeningToken, captchaToken!);
+      // Reset Turnstile — token is one-time use
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       const payload = extractVerificationPayload(res);
       if (payload) {
         setVerificationState({
@@ -118,11 +139,33 @@ export default function DetailsPage() {
           phone_verification_pending: true,
           verified_phone: details.phone,
         });
+        if (payload.phone_verification_locked) {
+          toast.error("This phone is locked after five failed attempts. Try again in 24 hours or enter a different number.");
+        } else {
+          setResendSeconds(30);
+          toast.success("6-digit verification code sent to your phone via SMS!");
+        }
       }
-      setResendSeconds(30);
-      toast.success("6-digit verification code sent to your phone via SMS!");
     } catch (err: any) {
-      toast.error(getParticipantErrorMessage(err, "Failed to send verification SMS. Ensure number is mobile-capable."));
+      // Reset Turnstile so the candidate gets a fresh token for retry
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
+      const errData = err?.response?.data?.data || err?.response?.data;
+      if (errData?.phone_verification_locked || errData?.phone_verification_locked_until) {
+        setVerificationState({
+          verified_phone: details.phone,
+          phone_verified_at: null,
+          phone_verification_pending: true,
+          verification_expires_at: null,
+          resend_available_at: null,
+          phone_verification_locked: true,
+          phone_verification_locked_until: errData.phone_verification_locked_until || null,
+          verification_attempts_remaining: 0,
+        });
+        toast.error("This phone is locked after five failed attempts. Try again in 24 hours or enter a different number.");
+      } else {
+        toast.error(getParticipantErrorMessage(err, "Failed to send verification SMS. Ensure number is mobile-capable."));
+      }
     } finally {
       setIsRequestingOtp(false);
     }
@@ -135,10 +178,11 @@ export default function DetailsPage() {
 
     setIsResendingOtp(true);
     try {
-      const res = await jobsApi.resendPhoneVerification(slug, jobId, screeningToken);
+      const res = await jobsApi.resendPhoneVerification(slug, jobId, screeningToken, captchaToken!);
+      // Reset Turnstile — token is one-time use
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       const payload = extractVerificationPayload(res);
-      // Merge into existing state — resend endpoint may not return all fields
-      // (e.g. verification_attempts_remaining), so preserve them from prev state
       setVerificationState((prev) => ({
         ...(prev || {} as any),
         ...(payload || {}),
@@ -149,6 +193,8 @@ export default function DetailsPage() {
       setOtpCode("");
       toast.success("A new verification code has been sent!");
     } catch (err: any) {
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       toast.error(getParticipantErrorMessage(err, "Failed to resend code. Please try again."));
     } finally {
       setIsResendingOtp(false);
@@ -168,43 +214,29 @@ export default function DetailsPage() {
         if (payload.phone_verified_at) {
           toast.success("Phone number verified successfully!");
         } else if (payload.phone_verification_locked) {
-          toast.error("Account locked due to 5 failed attempts. Please contact support or try later.");
+          toast.error("This phone is locked after five failed attempts. Try again in 24 hours or enter a different number.");
         }
       }
     } catch (err: any) {
+      const errData = err?.response?.data?.data || err?.response?.data;
       const errMsg = getParticipantErrorMessage(err, "Invalid verification code. Please check and try again.");
       toast.error(errMsg);
       setOtpCode("");
 
-      // Extract attempts remaining from backend error message or response payload
-      const attemptsMatch = errMsg.match(/(\d+)\s+attempts?\s+remaining/i);
-      const remainingFromPayload = err?.response?.data?.verification_attempts_remaining ?? err?.response?.data?.data?.verification_attempts_remaining;
+      const isLocked = Boolean(errData?.phone_verification_locked || errData?.verification_attempts_remaining === 0 || errMsg.toLowerCase().includes("locked"));
+      const remainingFromPayload = errData?.verification_attempts_remaining;
+      const lockedUntilFromPayload = errData?.phone_verification_locked_until;
 
-      let remaining: number | undefined;
-      if (errMsg.toLowerCase().includes("too many failed attempts") || errMsg.toLowerCase().includes("different phone number")) {
-        remaining = 0;
-      } else if (typeof remainingFromPayload === "number") {
-        remaining = remainingFromPayload;
-      } else if (attemptsMatch) {
-        remaining = parseInt(attemptsMatch[1], 10);
-      }
-
-      if (typeof remaining === "number") {
-        setVerificationState((prev) => prev ? ({
-          ...prev,
-          phone_verification_pending: true,
-          verification_attempts_remaining: remaining,
-          phone_verification_locked: remaining <= 0,
-        }) : {
-          verified_phone: details.phone,
-          phone_verification_pending: true,
-          phone_verification_locked: remaining <= 0,
-          verification_attempts_remaining: remaining,
-          phone_verified_at: null,
-          verification_expires_at: null,
-          resend_available_at: null,
-        });
-      }
+      setVerificationState((prev) => ({
+        verified_phone: details.phone,
+        phone_verified_at: null,
+        phone_verification_pending: true,
+        verification_expires_at: prev?.verification_expires_at ?? null,
+        resend_available_at: prev?.resend_available_at ?? null,
+        phone_verification_locked: isLocked || (typeof remainingFromPayload === "number" && remainingFromPayload <= 0),
+        phone_verification_locked_until: lockedUntilFromPayload ?? prev?.phone_verification_locked_until ?? null,
+        verification_attempts_remaining: typeof remainingFromPayload === "number" ? remainingFromPayload : (isLocked ? 0 : Math.max(0, (prev?.verification_attempts_remaining ?? 5) - 1)),
+      }));
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -311,59 +343,68 @@ export default function DetailsPage() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+          <label htmlFor="given-name" className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
             <User className="w-3.5 h-3.5 text-[#FF512F]" />
             First Name
           </label>
           <div className="mt-1.5 relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
             <input
+              id="given-name"
+              name="given-name"
               type="text"
+              autoComplete="given-name"
               required
               disabled={isSubmitting}
               value={details.firstName}
               onChange={(e) => setDetails({ ...details, firstName: e.target.value })}
               placeholder="e.g. Jane"
-              className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
+              className="w-full pl-9 pr-3 py-2.5 input-dark-bg border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] transition-all disabled:opacity-50"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+          <label htmlFor="family-name" className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
             <User className="w-3.5 h-3.5 text-[#FF512F]" />
             Last Name
           </label>
           <div className="mt-1.5 relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
             <input
+              id="family-name"
+              name="family-name"
               type="text"
+              autoComplete="family-name"
               required
               disabled={isSubmitting}
               value={details.lastName}
               onChange={(e) => setDetails({ ...details, lastName: e.target.value })}
               placeholder="e.g. Doe"
-              className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
+              className="w-full pl-9 pr-3 py-2.5 input-dark-bg border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] transition-all disabled:opacity-50"
             />
           </div>
         </div>
       </div>
 
       <div>
-        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+        <label htmlFor="email" className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
           <Mail className="w-3.5 h-3.5 text-[#FF512F]" />
           Email Address
         </label>
         <div className="mt-1.5 relative">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
           <input
+            id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             required
             disabled={isSubmitting}
             value={details.email}
             onChange={(e) => setDetails({ ...details, email: e.target.value })}
             placeholder="jane@example.com"
-            className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] focus:ring-1 focus:ring-[#FF512F]/45 transition-all disabled:opacity-50"
+            className="w-full pl-9 pr-3 py-2.5 input-dark-bg border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#FF512F] transition-all disabled:opacity-50"
           />
         </div>
       </div>
@@ -391,6 +432,8 @@ export default function DetailsPage() {
               onChange={(phone) => {
                 setDetails({ ...details, phone });
                 if (verificationState) setVerificationState(null);
+                setCaptchaToken(null);
+                turnstileRef.current?.reset();
               }}
             />
           </div>
@@ -399,13 +442,13 @@ export default function DetailsPage() {
             <button
               type="button"
               onClick={handleRequestOtp}
-              disabled={isRequestingOtp || isSubmitting || Boolean(verificationState?.phone_verification_pending)}
-              className="w-full sm:w-auto px-4 py-2.5 font-bold text-xs rounded-lg transition-all border border-white/15 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isRequestingOtp || isSubmitting || Boolean(verificationState?.phone_verification_pending) || !captchaToken}
+              className="w-full sm:w-auto px-4 py-2.5 font-bold text-xs rounded-lg transition-all bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer shadow-md shadow-[#FF512F]/20 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isRequestingOtp ? (
                 <Spinner className="w-3.5 h-3.5 border-t-2 border-b-2 border-white shrink-0" />
               ) : verificationState?.phone_verification_pending ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
               ) : (
                 <PhoneCall className="w-3.5 h-3.5 shrink-0" />
               )}
@@ -413,6 +456,22 @@ export default function DetailsPage() {
             </button>
           )}
         </div>
+
+        {/* Turnstile CAPTCHA — shown when phone is entered and not yet verified */}
+        {hasPhoneInput && !isPhoneVerified && !verificationState?.phone_verification_pending && (
+          <div className="w-full flex justify-center overflow-hidden">
+            <div className="scale-90 origin-center">
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => { setCaptchaToken(null); toast.error("Security check failed. Please refresh and try again."); }}
+                options={{ theme: "dark", size: "flexible" }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* 6-Digit OTP Input Form Section */}
         {verificationState?.phone_verification_pending && !isPhoneVerified && (
@@ -429,46 +488,77 @@ export default function DetailsPage() {
             />
 
             {verificationState.phone_verification_locked ? (
-              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20">
-                <Lock className="w-4 h-4 shrink-0" />
-                <span>Too many failed attempts. Enter a different number.</span>
+              <div className="flex flex-col gap-1.5 text-xs text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/25">
+                <div className="flex items-start gap-2">
+                  <Lock className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-red-300">
+                      This phone is locked after five failed attempts. Try again in 24 hours or enter a different number.
+                    </p>
+                    {verificationState.phone_verification_locked_until && (
+                      <p className="text-[11px] text-red-400/80">
+                        Locked until: {new Date(verificationState.phone_verification_locked_until).toLocaleString(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 pb-1 border-t border-white/5">
-                <div className="flex items-center justify-between sm:justify-start gap-3">
-                  <span className="text-[11px] sm:text-[12px] text-gray-400 leading-normal">
-                    Attempts remaining: {verificationState.verification_attempts_remaining ?? 5}
-                  </span>
-                  {resendSeconds > 0 ? (
-                    <span className="text-[10px] sm:text-[12px] text-gray-400 flex items-center gap-1 whitespace-nowrap leading-normal">
-                      <Clock className="w-3 h-3 text-[#FF512F] shrink-0" /> Resend in {resendSeconds}s
+              <div className="space-y-3 pt-2 border-t border-white/5">
+                {/* Turnstile for resend — shown when cooldown has expired */}
+                {resendSeconds <= 0 && (
+                  <div className="w-full flex justify-center overflow-hidden">
+                    <div className="scale-90 origin-center">
+                      <Turnstile
+                        ref={turnstileRef}
+                        siteKey={TURNSTILE_SITE_KEY}
+                        onSuccess={(token) => setCaptchaToken(token)}
+                        onExpire={() => setCaptchaToken(null)}
+                        onError={() => { setCaptchaToken(null); toast.error("Security check failed. Please refresh and try again."); }}
+                        options={{ theme: "dark", size: "flexible" }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+                  <div className="flex items-center justify-between sm:justify-start gap-3">
+                    <span className="text-[11px] sm:text-[12px] text-gray-400 leading-normal">
+                      Attempts remaining: {verificationState.verification_attempts_remaining ?? 5}
                     </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      disabled={isResendingOtp || isRequestingOtp}
-                      className="text-[10px] sm:text-[12px] font-bold text-[#FF512F] hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap disabled:opacity-50 leading-normal"
-                    >
-                      {isResendingOtp ? (
-                        <Spinner className="w-3 h-3 border-t-2 border-b-2 border-[#FF512F] shrink-0" />
-                      ) : (
-                        <RotateCcw className="w-3 h-3 shrink-0" />
-                      )}
-                      <span>{isResendingOtp ? "Resending..." : "Resend Code"}</span>
-                    </button>
-                  )}
-                </div>
+                    {resendSeconds > 0 ? (
+                      <span className="text-[10px] sm:text-[12px] text-gray-400 flex items-center gap-1 whitespace-nowrap leading-normal">
+                        <Clock className="w-3 h-3 text-[#FF512F] shrink-0" /> Resend in {resendSeconds}s
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={isResendingOtp || isRequestingOtp || verificationState.phone_verification_locked || !captchaToken}
+                        className="text-[10px] sm:text-[12px] font-bold text-[#FF512F] hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap disabled:opacity-50 leading-normal"
+                      >
+                        {isResendingOtp ? (
+                          <Spinner className="w-3 h-3 border-t-2 border-b-2 border-[#FF512F] shrink-0" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3 shrink-0" />
+                        )}
+                        <span>{isResendingOtp ? "Resending..." : "Resend Code"}</span>
+                      </button>
+                    )}
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={handleVerifyOtp}
-                  disabled={isVerifyingOtp || otpCode.length !== 6}
-                  className="w-full sm:w-auto px-4 py-1.5 border border-[#FF512F]/30 bg-[#FF512F]/10 hover:bg-[#FF512F]/20 disabled:hover:bg-[#FF512F]/10 disabled:opacity-50 text-[#FF512F] text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  {isVerifyingOtp && <Spinner className="w-3 h-3 border-t-2 border-b-2 border-white shrink-0" />}
-                  <span>Verify</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={isVerifyingOtp || otpCode.length !== 6 || verificationState.phone_verification_locked}
+                    className="w-full sm:w-auto px-5 py-2 font-bold text-xs rounded-lg transition-all bg-gradient-to-r from-[#FF512F] to-[#FF7A00] hover:from-[#E04020] hover:to-[#FF512F] text-white flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-md shadow-[#FF512F]/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isVerifyingOtp && <Spinner className="w-3 h-3 border-t-2 border-b-2 border-white shrink-0" />}
+                    <span>Verify</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -554,7 +644,7 @@ export default function DetailsPage() {
             </p>
           </div>
         )}
-        {smsConsent && !isPhoneVerified && (
+        {hasPhoneInput && !isPhoneVerified && (
           <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 transition-all duration-150 ease-out animate-in fade-in slide-in-from-top-1 shadow-sm">
             <PhoneCall className="w-4 h-4 text-[#FF512F] shrink-0" />
             <p className="text-xs font-medium text-amber-200 leading-snug">
@@ -571,7 +661,7 @@ export default function DetailsPage() {
           </div>
         )}
         {(() => {
-          const isJoinDisabled = isSubmitting || !termsConsent || (!smsConsent && !emailConsent);
+          const isJoinDisabled = isSubmitting || !termsConsent || (!smsConsent && !emailConsent) || (hasPhoneInput && !isPhoneVerified) || Boolean(verificationState?.phone_verification_locked);
           return (
             <button
               type="submit"

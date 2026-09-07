@@ -177,7 +177,7 @@ export default function AdmitPage() {
 
           {/* No token */}
           {!isInspecting && !token && (
-            <InvalidState message="No admission token was found in this link. Please check your email and try again." />
+            <InvalidState message="No admission token was found in this link. Please check your text or email and try again." />
           )}
 
           {/* Generic error (network/inspect fail) */}
