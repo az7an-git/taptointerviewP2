@@ -50,10 +50,25 @@ export function hasActiveSessionFlow(applicants: JobApplicant[] | undefined): bo
 }
 
 export function findSessionCandidate(
-  applicants: JobApplicant[] | undefined
+  applicants: JobApplicant[] | undefined,
+  currentUserId?: string
 ): JobApplicant | undefined {
-  return (applicants ?? []).find((a) =>
-    SESSION_FLOW_STATUSES.includes(normalizeQueueStatus(a.status))
+  if (!applicants) return undefined;
+  if (currentUserId) {
+    const hostCandidate = applicants.find(
+      (a) =>
+        SESSION_FLOW_STATUSES.includes(normalizeQueueStatus(a.status)) &&
+        (a.isHost === true || a.interviewerId === currentUserId)
+    );
+    if (hostCandidate) return hostCandidate;
+  }
+  return (
+    applicants.find(
+      (a) =>
+        SESSION_FLOW_STATUSES.includes(normalizeQueueStatus(a.status)) &&
+        (a.isHost === true || a.interviewInProgress === true || a.participant === null)
+    ) ||
+    applicants.find((a) => SESSION_FLOW_STATUSES.includes(normalizeQueueStatus(a.status)))
   );
 }
 
@@ -117,16 +132,19 @@ export function getSessionDetailLabel(candidate: JobApplicant): string | null {
 }
 
 export function getParticipantDisplayName(
-  participant?: { firstName?: string; lastName?: string } | null
+  participant?: { firstName?: string; lastName?: string } | null,
+  fallback: string = "Candidate"
 ): string {
+  if (!participant) return fallback;
   const firstName = participant?.firstName ?? "";
   const lastName = participant?.lastName ?? "";
-  return `${firstName} ${lastName}`.trim() || "Candidate";
+  return `${firstName} ${lastName}`.trim() || fallback;
 }
 
 export function getAdmitNextShortName(
   participant?: { firstName?: string; lastName?: string } | null
 ): string {
+  if (!participant) return "";
   const firstName = participant?.firstName ?? "";
   const lastInitial = participant?.lastName?.charAt(0);
   if (!firstName && !lastInitial) return "";
@@ -134,11 +152,13 @@ export function getAdmitNextShortName(
 }
 
 export function getParticipantInitials(
-  participant?: { firstName?: string; lastName?: string } | null
+  participant?: { firstName?: string; lastName?: string } | null,
+  fallback: string = "C"
 ): string {
+  if (!participant) return fallback;
   const first = participant?.firstName?.[0]?.toUpperCase() || "?";
   const last = participant?.lastName?.[0]?.toUpperCase() || "";
-  return `${first}${last}`;
+  return `${first}${last}`.trim() || fallback;
 }
 
 export function formatJoinedTime(joinedAt: string | null): string {
@@ -157,18 +177,15 @@ export function mergeApplicantUpdate(
 ): JobApplicant[] {
   const list = applicants ?? [];
   if (updated) {
-    return list.map((app) =>
-      app.queueEntryId === updated.queueEntryId
-        ? {
-          ...app,
-          ...updated,
-          participant: {
-            ...app.participant,
-            ...updated.participant,
-          },
-        }
-        : app
-    );
+    return list.map((app) => {
+      if (app.queueEntryId !== updated.queueEntryId) return app;
+      const mergedParticipant = updated.participant ?? app.participant;
+      return {
+        ...app,
+        ...updated,
+        participant: mergedParticipant,
+      };
+    });
   }
   if (queueEntryId && patch) {
     return list.map((app) =>

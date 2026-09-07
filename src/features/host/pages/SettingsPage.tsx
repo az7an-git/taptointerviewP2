@@ -221,7 +221,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Content Area */}
-          <div className="md:col-span-2 p-4 md:p-6 flex flex-col">
+          <div className="md:col-span-2 p-2.5 sm:p-4 md:p-6 flex flex-col">
             <div key={activeTab} className="animate-tab-content flex-1 relative z-10">
               {activeTab === "profile" && canEditCompanyProfile && (
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">

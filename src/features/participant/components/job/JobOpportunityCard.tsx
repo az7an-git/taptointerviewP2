@@ -68,7 +68,7 @@ export function JobOpportunityCard({ job, onJoinQueue, getServerNowMs, isGrid = 
           {isOpen ? (
             <span className="flex items-center gap-1 text-emerald-400">
               <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-              Queue Open Now
+              Live Interviews Now
             </span>
           ) : isScheduled && job.next_window ? (
             <ScheduledWindowLabel startsAt={job.next_window.starts_at} />
